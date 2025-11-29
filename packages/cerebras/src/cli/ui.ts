@@ -1,10 +1,11 @@
 import z from "zod"
 import { EOL } from "os"
 import { NamedError } from "@cerebras-ai/util/error"
+import { Installation } from "../installation"
 
 export namespace UI {
   const LOGO = [
-    [``, ``],
+    [``, `v${Installation.VERSION}`],
     [`█▀▀▀ █▀▀ █▀▀█ █▀▀ █▀▀▄ █▀▀█ █▀▀█ █▀▀▀`, ``],
     [`█    █▀▀ █▄▄▀ █▀▀ █▀▀▄ █▄▄▀ █▄▄█ ▀▀█ `, ``],
     [`▀▀▀▀ ▀▀▀ ▀  ▀ ▀▀▀ ▀▀▀▀ ▀  ▀ ▀  ▀ ▀▀▀▀`, ``],
