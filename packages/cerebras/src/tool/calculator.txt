@@ -1,0 +1,22 @@
+Performs mathematical calculations and evaluations with support for basic arithmetic operations, functions, and expressions.
+
+This tool can evaluate mathematical expressions including:
+- Basic arithmetic: addition (+), subtraction (-), multiplication (*), division (/)
+- Modulo operator (%)
+- Exponentiation (^ or **)
+- Parentheses for grouping
+- Mathematical functions: sin, cos, tan, sqrt, abs, log, log10, exp, floor, ceil, round
+- Constants: pi, e
+- Number literals: integers, decimals, negative numbers
+
+Usage notes:
+- The expression parameter is required and should be a valid mathematical expression
+- Use standard mathematical notation
+- Examples:
+  - "2 + 3" returns 5
+  - "10 * (5 + 3)" returns 80
+  - "sqrt(16) + pi" returns approximately 7.1416
+  - "sin(0) + cos(0)" returns 1
+  - "2^8" or "2**8" returns 256
+- Invalid expressions will return helpful error messages
+- Division by zero is handled gracefully

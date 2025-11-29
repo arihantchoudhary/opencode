@@ -4,13 +4,18 @@ import { For, createSignal, onMount } from "solid-js"
 import { useTheme } from "@tui/context/theme"
 
 const LOGO_LEFT = [
-  ``,
   `█▀▀▀ █▀▀ █▀▀█ █▀▀ █▀▀▄ █▀▀█ █▀▀█ █▀▀▀`,
-  `█    █▀▀ █▄▄▀ █▀▀ █▀▀▄ █▄▄▀ █▄▄█ ▀▀█ `,
+  `█    █▀▀ █▄▄▀ █▀▀ █▀▀▄ █▄▄▀ █▄▄█ ▀▀▀█`,
   `▀▀▀▀ ▀▀▀ ▀  ▀ ▀▀▀ ▀▀▀▀ ▀  ▀ ▀  ▀ ▀▀▀▀`,
+  `                                     `,
 ]
 
-const LOGO_RIGHT = [``, ``, ``, ``]
+const LOGO_RIGHT = [
+  `  █▀▀▀ █▀▀█ █▀▀▄ █▀▀`,
+  `  █    █  █ █  █ █▀▀`,
+  `  ▀▀▀▀ ▀▀▀▀ ▀▀▀  ▀▀▀`,
+  `                    `,
+]
 
 export function Logo() {
   const { theme } = useTheme()

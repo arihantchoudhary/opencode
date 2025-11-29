@@ -181,13 +181,14 @@ export const AuthLoginCommand = cmd({
         await ModelsDev.refresh().catch(() => {})
         const providers = await ModelsDev.get()
         const priority: Record<string, number> = {
-          opencode: 0,
+          cerebras: 0,
           anthropic: 1,
-          "github-copilot": 2,
-          openai: 3,
-          google: 4,
-          openrouter: 5,
-          vercel: 6,
+          opencode: 2,
+          "github-copilot": 3,
+          openai: 4,
+          google: 5,
+          openrouter: 6,
+          vercel: 7,
         }
         let provider = await prompts.autocomplete({
           message: "Select provider",
@@ -203,7 +204,7 @@ export const AuthLoginCommand = cmd({
               map((x) => ({
                 label: x.name,
                 value: x.id,
-                hint: priority[x.id] <= 1 ? "recommended" : undefined,
+                hint: priority[x.id] === 0 ? "⚡ fastest" : priority[x.id] === 1 ? "recommended" : undefined,
               })),
             ),
             {
@@ -374,6 +375,11 @@ export const AuthLoginCommand = cmd({
           )
           prompts.outro("Done")
           return
+        }
+
+        if (provider === "cerebras") {
+          prompts.log.info("🚀 Get your Cerebras API key at: https://cloud.cerebras.ai/")
+          prompts.log.message("   Navigate to: Settings → API Keys → Create New Key\n")
         }
 
         if (provider === "opencode") {
