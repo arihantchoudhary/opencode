@@ -1,26 +1,19 @@
 <p align="center">
-  <a href="https://opencode.ai">
+  <a href="https://cerebras.dev">
     <picture>
       <source srcset="packages/console/app/src/asset/logo-ornate-dark.svg" media="(prefers-color-scheme: dark)">
       <source srcset="packages/console/app/src/asset/logo-ornate-light.svg" media="(prefers-color-scheme: light)">
-      <img src="packages/console/app/src/asset/logo-ornate-light.svg" alt="OpenCode logo">
+      <img src="packages/console/app/src/asset/logo-ornate-light.svg" alt="Cerebras Code logo">
     </picture>
   </a>
 </p>
-<p align="center">The AI coding agent built for the terminal.</p>
-<p align="center">
-  <a href="https://opencode.ai/discord"><img alt="Discord" src="https://img.shields.io/discord/1391832426048651334?style=flat-square&label=discord" /></a>
-  <a href="https://www.npmjs.com/package/opencode-ai"><img alt="npm" src="https://img.shields.io/npm/v/opencode-ai?style=flat-square" /></a>
-  <a href="https://github.com/sst/opencode/actions/workflows/publish.yml"><img alt="Build status" src="https://img.shields.io/github/actions/workflow/status/sst/opencode/publish.yml?style=flat-square&branch=dev" /></a>
-</p>
-
-[![OpenCode Terminal UI](packages/web/src/assets/lander/screenshot.png)](https://opencode.ai)
+<p align="center">AI coding agent powered by Cerebras inference.</p>
 
 ---
 
-### Installation
+## Installation
 
-#### Quick Install (Recommended)
+### Quick Install (Recommended)
 
 ```bash
 # Homebrew (macOS and Linux)
@@ -28,100 +21,57 @@ brew tap arihantchoudhary/tap
 brew install cerebras
 ```
 
-#### Platform-Specific Packages
+### Platform-Specific Packages
 
-If you prefer npm or the Homebrew installation doesn't work, install the platform-specific package:
+If Homebrew doesn't work, install the platform-specific package directly:
 
-**macOS Intel:**
-
-```bash
-npm install -g cerebras-darwin-x64-baseline@latest
-ln -sf $(npm root -g)/cerebras-darwin-x64-baseline/bin/cerebras $(dirname $(which npm))/cerebras
-```
-
-**macOS Apple Silicon (M1/M2/M3):**
+#### macOS Apple Silicon (M1/M2/M3/M4)
 
 ```bash
 npm install -g cerebras-darwin-arm64@latest
 ln -sf $(npm root -g)/cerebras-darwin-arm64/bin/cerebras $(dirname $(which npm))/cerebras
 ```
 
-**Linux x64:**
+#### macOS Intel
+
+```bash
+npm install -g cerebras-darwin-x64@latest
+ln -sf $(npm root -g)/cerebras-darwin-x64/bin/cerebras $(dirname $(which npm))/cerebras
+```
+
+#### Linux x64
 
 ```bash
 npm install -g cerebras-linux-x64@latest
 sudo ln -sf $(npm root -g)/cerebras-linux-x64/bin/cerebras /usr/local/bin/cerebras
 ```
 
-**Linux ARM64:**
+#### Linux ARM64
 
 ```bash
 npm install -g cerebras-linux-arm64@latest
 sudo ln -sf $(npm root -g)/cerebras-linux-arm64/bin/cerebras /usr/local/bin/cerebras
 ```
 
-**Windows x64:**
+#### Windows x64
 
 ```powershell
 npm install -g cerebras-windows-x64@latest
 # The cerebras.exe command should work automatically after installation
 ```
 
-> [!TIP]
-> Remove versions older than 0.1.x before installing.
-
-#### Verify Installation
-
-After installation, verify it works:
+### Verify Installation
 
 ```bash
 cerebras --version
 ```
 
-### Agents
+### Getting Started
 
-OpenCode includes two built-in agents you can switch between,
-you can switch between these using the `Tab` key.
-
-- **build** - Default, full access agent for development work
-- **plan** - Read-only agent for analysis and code exploration
-  - Denies file edits by default
-  - Asks permission before running bash commands
-  - Ideal for exploring unfamiliar codebases or planning changes
-
-Also, included is a **general** subagent for complex searches and multi-step tasks.
-This is used internally and can be invoked using `@general` in messages.
-
-Learn more about [agents](https://opencode.ai/docs/agents).
-
-### Documentation
-
-For more info on how to configure OpenCode [**head over to our docs**](https://opencode.ai/docs).
-
-### Contributing
-
-If you're interested in contributing to OpenCode, please read our [contributing docs](./CONTRIBUTING.md) before submitting a pull request.
-
-### Building on OpenCode
-
-If you are working on a project that's related to OpenCode and is using "opencode" as a part of its name; for example, "opencode-dashboard" or "opencode-mobile", please add a note to your README to clarify that it is not built by the OpenCode team and is not affiliated with us in anyway.
-
-### FAQ
-
-#### How is this different than Claude Code?
-
-It's very similar to Claude Code in terms of capability. Here are the key differences:
-
-- 100% open source
-- Not coupled to any provider. Although we recommend the models we provide through [OpenCode Zen](https://opencode.ai/zen); OpenCode can be used with Claude, OpenAI, Google or even local models. As models evolve the gaps between them will close and pricing will drop so being provider-agnostic is important.
-- Out of the box LSP support
-- A focus on TUI. OpenCode is built by neovim users and the creators of [terminal.shop](https://terminal.shop); we are going to push the limits of what's possible in the terminal.
-- A client/server architecture. This for example can allow OpenCode to run on your computer, while you can drive it remotely from a mobile app. Meaning that the TUI frontend is just one of the possible clients.
-
-#### What's the other repo?
-
-The other confusingly named repo has no relation to this one. You can [read the story behind it here](https://x.com/thdxr/status/1933561254481666466).
+1. Run `cerebras` to start the interactive terminal UI
+2. Configure your Cerebras API key when prompted
+3. Start coding with AI assistance!
 
 ---
 
-**Join our community** [Discord](https://discord.gg/opencode) | [X.com](https://x.com/opencode)
+**Get your Cerebras API key:** [inference.cerebras.ai](https://inference.cerebras.ai)
