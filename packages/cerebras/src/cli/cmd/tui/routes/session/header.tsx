@@ -84,7 +84,7 @@ const ContextInfo = (props: {
         {/* Line 2: Duration, RPM, Cache, Provider, Requests */}
         <box flexDirection="row" gap={1}>
           <text fg={theme.textMuted} wrapMode="none">
-            ⏱️  {props.duration()}
+            ⏱️ {props.duration()}
           </text>
           <text fg={theme.textMuted} wrapMode="none">
             |
