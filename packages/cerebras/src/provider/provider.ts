@@ -67,12 +67,19 @@ export namespace Provider {
   const state = Instance.state(async () => {
     using _ = log.time("state")
     const config = await Config.get()
-    const database = await ModelsDev.get()
+    let database = await ModelsDev.get()
+
+    // Only allow Cerebras provider
+    database = Object.fromEntries(
+      Object.entries(database).filter(([providerID]) => providerID === "cerebras")
+    )
 
     const disabled = new Set(config.disabled_providers ?? [])
     const enabled = config.enabled_providers ? new Set(config.enabled_providers) : null
 
     function isProviderAllowed(providerID: string): boolean {
+      // Only allow Cerebras
+      if (providerID !== "cerebras") return false
       if (enabled && !enabled.has(providerID)) return false
       if (disabled.has(providerID)) return false
       return true
@@ -127,18 +134,6 @@ export namespace Provider {
     }
 
     const configProviders = Object.entries(config.provider ?? {})
-
-    // Add GitHub Copilot Enterprise provider that inherits from GitHub Copilot
-    if (database["github-copilot"]) {
-      const githubCopilot = database["github-copilot"]
-      database["github-copilot-enterprise"] = {
-        ...githubCopilot,
-        id: "github-copilot-enterprise",
-        name: "GitHub Copilot Enterprise",
-        // Enterprise uses a different API endpoint - will be set dynamically based on auth
-        api: undefined,
-      }
-    }
 
     for (const [providerID, provider] of configProviders) {
       const existing = database[providerID]
@@ -240,41 +235,15 @@ export namespace Provider {
       if (!plugin.auth) continue
       const providerID = plugin.auth.provider
       if (disabled.has(providerID)) continue
+      // Only allow Cerebras plugins
+      if (providerID !== "cerebras") continue
 
-      // For github-copilot plugin, check if auth exists for either github-copilot or github-copilot-enterprise
-      let hasAuth = false
       const auth = await Auth.get(providerID)
-      if (auth) hasAuth = true
-
-      // Special handling for github-copilot: also check for enterprise auth
-      if (providerID === "github-copilot" && !hasAuth) {
-        const enterpriseAuth = await Auth.get("github-copilot-enterprise")
-        if (enterpriseAuth) hasAuth = true
-      }
-
-      if (!hasAuth) continue
+      if (!auth) continue
       if (!plugin.auth.loader) continue
 
-      // Load for the main provider if auth exists
-      if (auth) {
-        const options = await plugin.auth.loader(() => Auth.get(providerID) as any, database[plugin.auth.provider])
-        mergeProvider(plugin.auth.provider, options ?? {}, "custom")
-      }
-
-      // If this is github-copilot plugin, also register for github-copilot-enterprise if auth exists
-      if (providerID === "github-copilot") {
-        const enterpriseProviderID = "github-copilot-enterprise"
-        if (!disabled.has(enterpriseProviderID)) {
-          const enterpriseAuth = await Auth.get(enterpriseProviderID)
-          if (enterpriseAuth) {
-            const enterpriseOptions = await plugin.auth.loader(
-              () => Auth.get(enterpriseProviderID) as any,
-              database[enterpriseProviderID],
-            )
-            mergeProvider(enterpriseProviderID, enterpriseOptions ?? {}, "custom")
-          }
-        }
-      }
+      const options = await plugin.auth.loader(() => Auth.get(providerID) as any, database[plugin.auth.provider])
+      mergeProvider(plugin.auth.provider, options ?? {}, "custom")
     }
 
     // load config
