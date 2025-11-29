@@ -90,10 +90,33 @@ if (process.env.NPM_CONFIG_TOKEN) {
       process.chdir(dir)
     }
   }
-  // Wait 2 minutes before publishing main package to avoid rate limiting
-  console.log("⏳ Waiting 2 minutes before publishing main cerebras package...")
-  await new Promise((resolve) => setTimeout(resolve, 120000))
-  await $`cd ./dist/${pkg.name} && bun publish --access public --tag ${Script.channel}`
+  // Wait 5 minutes before publishing main package to avoid rate limiting
+  console.log("⏳ Waiting 5 minutes before publishing main cerebras package...")
+  await new Promise((resolve) => setTimeout(resolve, 300000))
+
+  // Publish main package with retry logic
+  let mainRetries = 0
+  const maxMainRetries = 5
+  while (mainRetries <= maxMainRetries) {
+    try {
+      await $`cd ./dist/${pkg.name} && bun publish --access public --tag ${Script.channel}`
+      console.log("✅ Successfully published main cerebras package!")
+      break
+    } catch (error: any) {
+      if (error.stderr?.includes("429") || error.stderr?.includes("rate limited")) {
+        mainRetries++
+        if (mainRetries > maxMainRetries) {
+          console.log(`❌ Failed to publish main cerebras package after ${maxMainRetries} retries`)
+          throw error
+        }
+        const waitTime = Math.pow(2, mainRetries) * 120000 // Exponential backoff: 4min, 8min, 16min, 32min, 64min
+        console.log(`⚠️  Rate limited on main package, retry ${mainRetries}/${maxMainRetries} in ${waitTime / 60000} minutes...`)
+        await new Promise((resolve) => setTimeout(resolve, waitTime))
+      } else {
+        throw error // Not a rate limit error, rethrow
+      }
+    }
+  }
 } else {
   console.log("⚠️  Skipping npm publish (NPM_CONFIG_TOKEN not set)")
 }
