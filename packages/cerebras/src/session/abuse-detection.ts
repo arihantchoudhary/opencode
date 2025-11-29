@@ -60,7 +60,7 @@ export namespace AbuseDetection {
 
   // Load config on module initialization
   loadConfig().catch((err) => {
-    log.error("failed to load config, using defaults", { error: err })
+    log.debug("failed to load config, using defaults", { error: err })
   })
 
   export type Pattern = "identical_prompts" | "burst_requests" | "lopsided_tokens" | "prompt_size_growth" | "none"

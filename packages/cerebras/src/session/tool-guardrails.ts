@@ -51,7 +51,7 @@ export namespace ToolGuardrails {
 
   // Load config on module initialization
   loadConfig().catch((err) => {
-    log.error("failed to load config, using defaults", { error: err })
+    log.debug("failed to load config, using defaults", { error: err })
   })
 
   export type LintResult = {

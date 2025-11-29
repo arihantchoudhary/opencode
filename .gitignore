@@ -26,3 +26,20 @@ session.json
 *.pem
 *.key
 .cerebras/
+# Terraform
+infra/.terraform/
+infra/.terraform.lock.hcl
+infra/*.tfstate
+infra/*.tfstate.backup
+infra/.terraform.tfstate.lock.info
+
+# Tracking/backend temporary files  
+backend/
+scripts/
+docs/
+AWS_TABLES_CREATED.md
+COMPLETE_SETUP_SUMMARY.md
+DEPLOYMENT_STATUS.md
+ONBOARDING_SETUP.md
+TRACKING_SETUP.md
+USAGE_TRACKING_IMPLEMENTATION.md
