@@ -5,6 +5,7 @@
 ### ✅ What We Already Have
 
 #### 1. **Telemetry System** (`src/session/telemetry.ts`)
+
 - Real-time request tracking
 - RPM (Requests Per Minute) monitoring
 - Token usage tracking (input/output/total)
@@ -15,6 +16,7 @@
 - Auto-cleanup of old data (1 hour retention for requests)
 
 #### 2. **Stats Command** (`src/cli/cmd/stats.ts`)
+
 - Historical usage statistics
 - Cost tracking and analysis
 - Token usage aggregation
@@ -24,6 +26,7 @@
 - Per-day cost calculations
 
 #### 3. **Token Budget System** (`src/session/token-budget.ts`)
+
 - Session-level token limits
 - Budget warnings and alerts
 - Token consumption tracking
@@ -35,9 +38,11 @@
 ### **Phase 1: Enhanced Terminal UI Dashboard**
 
 #### 1.1 Real-Time Usage Dashboard (TUI Component)
+
 **Location**: New file `packages/cerebras/src/cli/cmd/tui/routes/dashboard.tsx`
 
 **Features**:
+
 ```typescript
 // Live dashboard showing:
 - Real-time RPM meter (animated gauge)
@@ -50,6 +55,7 @@
 ```
 
 **UI Mockup**:
+
 ```
 ┌─ Cerebras Live Dashboard ─────────────────────────────────────┐
 │                                                                │
@@ -78,6 +84,7 @@
 ```
 
 **Implementation**:
+
 ```typescript
 export function DashboardRoute() {
   const [metrics, setMetrics] = createSignal<Telemetry.SessionMetrics>()
@@ -107,20 +114,24 @@ export function DashboardRoute() {
 ---
 
 #### 1.2 Enhanced Session Header
+
 **Location**: `packages/cerebras/src/cli/cmd/tui/routes/session/header.tsx`
 
 **Add**:
+
 - Visual budget indicator (progress bar)
 - Color-coded status (green/yellow/red based on usage)
 - Cost-per-minute rate
 - Estimated remaining budget
 
 **Current**:
+
 ```
 Context | Session: 45,234/100,000 (45%) $0.12
 ```
 
 **Enhanced**:
+
 ```
 📊 45.2K/100K [▓▓▓▓▓░░░░░] 45% | 💰$0.12 ($0.03/min) | ⚡12 RPM | 🎯78% cache
 Status: ● Healthy
@@ -131,9 +142,11 @@ Status: ● Healthy
 ### **Phase 2: Advanced Analytics & Reporting**
 
 #### 2.1 Export & Reporting System
+
 **New file**: `packages/cerebras/src/analytics/exporter.ts`
 
 **Formats**:
+
 ```typescript
 export namespace Analytics {
   // Export to CSV
@@ -151,6 +164,7 @@ export namespace Analytics {
 ```
 
 **CLI Commands**:
+
 ```bash
 # Export current session
 cerebras export --format=csv --output=session-stats.csv
@@ -165,9 +179,11 @@ cerebras report --days=30 --save=monthly-report.md
 ---
 
 #### 2.2 Insights & Recommendations Engine
+
 **New file**: `packages/cerebras/src/analytics/insights.ts`
 
 **Features**:
+
 ```typescript
 export namespace Insights {
   // Analyze usage patterns
@@ -180,7 +196,7 @@ export namespace Insights {
 
   // Cost optimization suggestions
   export function suggestOptimizations(): {
-    switchToProvider: string  // Cheaper alternative
+    switchToProvider: string // Cheaper alternative
     cacheImprovements: string[]
     budgetRecommendations: number
   }
@@ -196,6 +212,7 @@ export namespace Insights {
 ```
 
 **Example Output**:
+
 ```
 💡 INSIGHTS & RECOMMENDATIONS
 
@@ -219,9 +236,11 @@ export namespace Insights {
 ### **Phase 3: Web Dashboard Integration**
 
 #### 3.1 Console Dashboard (Web UI)
+
 **Location**: `packages/console/app/src/routes/dashboard`
 
 **Features**:
+
 - Interactive charts (Recharts/D3)
 - Real-time WebSocket updates
 - Historical trend analysis
@@ -231,6 +250,7 @@ export namespace Insights {
 - Export to PDF/Excel
 
 **Components**:
+
 ```tsx
 <Dashboard>
   <UsageChart type="line" timeRange="30d" />
@@ -245,7 +265,9 @@ export namespace Insights {
 ---
 
 #### 3.2 Shared Session Analytics
+
 **For teams/enterprise**:
+
 ```typescript
 // Team-level metrics
 export namespace TeamAnalytics {
@@ -267,6 +289,7 @@ export namespace TeamAnalytics {
 ### **Phase 4: Advanced Features**
 
 #### 4.1 Predictive Analytics
+
 ```typescript
 export namespace Predictions {
   // Forecast costs based on historical data
@@ -290,12 +313,13 @@ export namespace Predictions {
 ---
 
 #### 4.2 Anomaly Detection
+
 ```typescript
 export namespace AnomalyDetection {
   // Detect unusual patterns
   export function detectAnomalies(sessionID: string): {
-    type: 'cost_spike' | 'token_surge' | 'error_rate'
-    severity: 'low' | 'medium' | 'high'
+    type: "cost_spike" | "token_surge" | "error_rate"
+    severity: "low" | "medium" | "high"
     description: string
     recommendation: string
   }[]
@@ -308,12 +332,13 @@ export namespace AnomalyDetection {
 ---
 
 #### 4.3 Usage Benchmarking
+
 ```typescript
 export namespace Benchmarks {
   // Compare against anonymous aggregate data
   export function compareToAverage(): {
-    tokensPerSession: 'below' | 'average' | 'above'
-    costEfficiency: number  // 0-100 score
+    tokensPerSession: "below" | "average" | "above"
+    costEfficiency: number // 0-100 score
     toolUsagePattern: string
   }
 
@@ -327,6 +352,7 @@ export namespace Benchmarks {
 ### **Phase 5: Integrations**
 
 #### 5.1 Slack Notifications
+
 ```yaml
 # .cerebras/config.yml
 integrations:
@@ -341,6 +367,7 @@ integrations:
 ---
 
 #### 5.2 Grafana/Prometheus Metrics
+
 ```typescript
 // Export metrics in Prometheus format
 export namespace Prometheus {
@@ -353,6 +380,7 @@ export namespace Prometheus {
 ---
 
 #### 5.3 GitHub Integration
+
 ```typescript
 // Auto-comment on PRs with usage stats
 export namespace GitHub {
@@ -378,8 +406,8 @@ interface SessionMetadata {
   teamID?: string
 
   // Enhanced tracking
-  tags: string[]  // e.g., ['bug-fix', 'feature-dev']
-  category: 'development' | 'research' | 'debugging' | 'learning'
+  tags: string[] // e.g., ['bug-fix', 'feature-dev']
+  category: "development" | "research" | "debugging" | "learning"
   quality: {
     userRating?: 1 | 2 | 3 | 4 | 5
     taskCompleted: boolean
@@ -389,7 +417,7 @@ interface SessionMetadata {
   // Context
   repository?: string
   branch?: string
-  files: string[]  // Files touched in this session
+  files: string[] // Files touched in this session
 
   // Performance
   performance: {
@@ -405,7 +433,9 @@ interface SessionMetadata {
 ## 🎯 Quick Wins (Implement First)
 
 ### 1. **Enhanced Stats Command** (2 hours)
+
 Add new flags:
+
 ```bash
 cerebras stats --visualize    # ASCII charts
 cerebras stats --compare      # Week-over-week comparison
@@ -414,19 +444,24 @@ cerebras stats --insights     # Show recommendations
 ```
 
 ### 2. **Budget Alerts in TUI** (3 hours)
+
 Show visual warnings when approaching limits:
+
 ```
 ⚠️  WARNING: 85% of session budget used (42.5K/50K tokens)
    Consider starting a new session or increasing budget.
 ```
 
 ### 3. **Real-time Cost Display** (2 hours)
+
 Update header to show:
+
 - Cost incrementing in real-time
 - Cost-per-minute rate
 - Projected session cost
 
 ### 4. **Session Summary on Exit** (1 hour)
+
 ```
 📊 SESSION SUMMARY
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -446,26 +481,31 @@ Cache Hit: 78%
 ## 🏗️ Implementation Roadmap
 
 ### Week 1: Foundation
+
 - [ ] Enhance telemetry with additional metrics
 - [ ] Add session quality tracking
 - [ ] Implement CSV/JSON export
 
 ### Week 2: Terminal UI
+
 - [ ] Build real-time dashboard component
 - [ ] Enhanced session header with budget visualization
 - [ ] Session summary on exit
 
 ### Week 3: Analytics
+
 - [ ] Insights engine
 - [ ] Anomaly detection
 - [ ] Cost forecasting
 
 ### Week 4: Web Dashboard
+
 - [ ] React dashboard components
 - [ ] Charts and visualizations
 - [ ] Real-time updates via WebSocket
 
 ### Week 5: Integrations
+
 - [ ] Slack notifications
 - [ ] Prometheus metrics
 - [ ] GitHub integration
@@ -475,6 +515,7 @@ Cache Hit: 78%
 ## 💡 Usage Examples
 
 ### For Individual Developers
+
 ```bash
 # Check today's usage
 cerebras stats --days=1
@@ -487,6 +528,7 @@ cerebras report --days=7 --output=weekly.md
 ```
 
 ### For Teams
+
 ```bash
 # Team summary
 cerebras stats --team=engineering
@@ -499,6 +541,7 @@ cerebras budget set --team=engineering --limit=1000
 ```
 
 ### For Cost Optimization
+
 ```bash
 # Find cost-saving opportunities
 cerebras optimize --suggestions
@@ -515,16 +558,18 @@ cerebras forecast --days=30
 ## 🎨 UI/UX Enhancements
 
 ### Color Coding
+
 ```typescript
 const statusColors = {
-  healthy: '#10b981',    // Green - under 50% budget
-  warning: '#f59e0b',    // Orange - 50-80% budget
-  critical: '#ef4444',   // Red - over 80% budget
-  excellent: '#3b82f6'   // Blue - great cache hit rate
+  healthy: "#10b981", // Green - under 50% budget
+  warning: "#f59e0b", // Orange - 50-80% budget
+  critical: "#ef4444", // Red - over 80% budget
+  excellent: "#3b82f6", // Blue - great cache hit rate
 }
 ```
 
 ### Progress Indicators
+
 ```
 Budget:  [▓▓▓▓▓▓░░░░] 60%  ⚠️
 Cache:   [▓▓▓▓▓▓▓▓▓░] 85%  ✓
@@ -532,6 +577,7 @@ RPM:     [▓▓▓░░░░░░░] 30%  ✓
 ```
 
 ### Sparklines for Trends
+
 ```
 Tokens: ▁▂▃▅▇█▇▅▃▂▁ (trending down)
 Cost:   ▁▁▂▂▃▄▅▆▇█▇ (trending up)
@@ -568,19 +614,21 @@ Track these to measure success of visibility enhancements:
 ## 🔐 Privacy & Security
 
 ### Data Collection
+
 - **Anonymous by default**: No PII collected
 - **Opt-in for advanced analytics**: User must explicitly enable
 - **Local-first**: All data stored locally unless user opts into cloud sync
 - **Transparent**: Clear documentation on what's tracked
 
 ### Configuration
+
 ```yaml
 # .cerebras/config.yml
 analytics:
   enabled: true
-  anonymous: true           # Don't send data to servers
-  detailed_tracking: false  # Minimal tracking only
-  share_aggregate: false    # Don't contribute to benchmarks
+  anonymous: true # Don't send data to servers
+  detailed_tracking: false # Minimal tracking only
+  share_aggregate: false # Don't contribute to benchmarks
 ```
 
 ---
