@@ -30,6 +30,7 @@ terraform apply
 ```
 
 This will create:
+
 - `dev-cerebras-users` - Users table
 - `dev-cerebras-api-keys` - API Keys table
 - `dev-cerebras-usage-sessions` - Usage Sessions table (90-day TTL)
@@ -53,22 +54,26 @@ terraform apply -var="environment=prod"
 ## Table Structure
 
 ### Users Table
+
 - **PK**: `USER#<userId>`
 - **SK**: `METADATA`
 - **GSI1**: Email lookup index
 
 ### API Keys Table
+
 - **PK**: `USER#<userId>`
 - **SK**: `APIKEY#<keyId>`
 - **GSI1**: Key authentication lookup
 
 ### Usage Sessions Table
+
 - **PK**: `USER#<userId>`
 - **SK**: `SESSION#<timestamp>#<sessionId>`
 - **GSI1**: Time-range queries
 - **TTL**: 90 days
 
 ### Usage Events Table
+
 - **PK**: `SESSION#<sessionId>`
 - **SK**: `EVENT#<timestamp>#<eventId>`
 - **GSI1**: User events lookup
@@ -83,6 +88,7 @@ terraform output
 ```
 
 Example:
+
 ```
 users_table_name = "dev-cerebras-users"
 api_keys_table_name = "dev-cerebras-api-keys"

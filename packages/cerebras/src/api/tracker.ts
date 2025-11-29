@@ -166,9 +166,7 @@ export class UsageTracker {
 
     try {
       const endedAt = new Date()
-      const duration = Math.floor(
-        (endedAt.getTime() - this.currentSession.startedAt.getTime()) / 1000,
-      )
+      const duration = Math.floor((endedAt.getTime() - this.currentSession.startedAt.getTime()) / 1000)
 
       await client.updateSession(this.currentSession.sessionId, {
         endedAt,

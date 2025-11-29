@@ -112,11 +112,7 @@ export class APIClient {
   /**
    * Make authenticated request to API
    */
-  private async request<T>(
-    method: string,
-    endpoint: string,
-    data?: any,
-  ): Promise<T> {
+  private async request<T>(method: string, endpoint: string, data?: any): Promise<T> {
     if (!this.apiKey) {
       throw new Error("API key not configured. Run 'cerebras auth login' first.")
     }
@@ -229,10 +225,7 @@ export class APIClient {
   /**
    * Get usage statistics
    */
-  async getStats(options?: {
-    startDate?: Date
-    endDate?: Date
-  }): Promise<UsageStats> {
+  async getStats(options?: { startDate?: Date; endDate?: Date }): Promise<UsageStats> {
     let endpoint = "/usage/stats"
     const params = new URLSearchParams()
 
@@ -253,11 +246,7 @@ export class APIClient {
   /**
    * List usage sessions
    */
-  async listSessions(options?: {
-    startDate?: Date
-    endDate?: Date
-    limit?: number
-  }): Promise<UsageSession[]> {
+  async listSessions(options?: { startDate?: Date; endDate?: Date; limit?: number }): Promise<UsageSession[]> {
     let endpoint = "/usage/sessions"
     const params = new URLSearchParams()
 
