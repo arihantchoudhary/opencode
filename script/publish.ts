@@ -20,8 +20,15 @@ if (!Script.preview) {
     console.log("First release - no changelog generated")
     notes.push("- Initial release of Cerebras Code")
   } else {
-    const log =
-      await $`git log v${previous}..HEAD --oneline --format="%h %s" -- packages/cerebras packages/sdk packages/plugin`.text()
+    // Check if the git tag exists before trying to generate changelog
+    const tagExists = await $`git rev-parse v${previous}`.nothrow().then((result) => result.exitCode === 0)
+
+    if (!tagExists) {
+      console.log(`Git tag v${previous} not found - treating as first release`)
+      notes.push("- Initial release of Cerebras Code")
+    } else {
+      const log =
+        await $`git log v${previous}..HEAD --oneline --format="%h %s" -- packages/cerebras packages/sdk packages/plugin`.text()
 
     const commits = log
       .split("\n")
@@ -73,10 +80,11 @@ if (!Script.preview) {
         notes.push(line)
       }
     }
-    console.log("---- Generated Changelog ----")
-    console.log(notes.join("\n"))
-    console.log("-----------------------------")
-    opencode.server.close()
+      console.log("---- Generated Changelog ----")
+      console.log(notes.join("\n"))
+      console.log("-----------------------------")
+      opencode.server.close()
+    }
   }
 }
 
