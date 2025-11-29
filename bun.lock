@@ -19,7 +19,7 @@
     },
     "packages/cerebras": {
       "name": "cerebras",
-      "version": "1.0.115",
+      "version": "1.0.116",
       "bin": {
         "cerebras": "./bin/cerebras",
       },
