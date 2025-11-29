@@ -34,10 +34,10 @@ export function Logo() {
       <For each={LOGO_LEFT}>
         {(line, index) => (
           <box flexDirection="row" gap={1}>
-            <text fg="#f05a28">{line.substring(0, charCount())}</text>
             <text fg={theme.text} attributes={TextAttributes.BOLD}>
-              {LOGO_RIGHT[index()].substring(0, charCount())}
+              {line.substring(0, charCount())}
             </text>
+            <text fg="#f05a28">{LOGO_RIGHT[index()].substring(0, charCount())}</text>
           </box>
         )}
       </For>
