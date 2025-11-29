@@ -276,9 +276,27 @@ export async function endSessionTracking(sessionID: string): Promise<void> {
 
 /**
  * Initialize tracking - subscribe to session events
+ *
+ * Note: Bus subscriptions are deferred until Instance context is available.
+ * Tracking functions (startSessionTracking, trackTokenUsage, etc.) are called
+ * directly from session code, so Bus subscriptions are optional.
  */
+let trackingInitialized = false
+
 export function initializeTracking(): void {
-  log.info("Initializing usage tracking")
+  // Just log - Bus subscriptions would require Instance context
+  // which isn't available at middleware time
+  log.info("Usage tracking ready")
+}
+
+/**
+ * Initialize Bus subscriptions (called when Instance context is available)
+ */
+export function initializeTrackingSubscriptions(): void {
+  if (trackingInitialized) return
+  trackingInitialized = true
+
+  log.info("Initializing usage tracking subscriptions")
 
   // Track session creation
   Bus.subscribe(Session.Event.Created, (event) => {
