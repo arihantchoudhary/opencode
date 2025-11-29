@@ -20,37 +20,57 @@
 
 ### Installation
 
-```bash
-# npm/bun/pnpm/yarn
-npm i -g cerebras@latest
-bun i -g cerebras@latest
-pnpm i -g cerebras@latest
-yarn global add cerebras@latest
+#### Quick Install (Recommended)
 
+```bash
 # Homebrew (macOS and Linux)
 brew tap arihantchoudhary/tap
 brew install cerebras
+```
 
-# Arch Linux (coming soon)
-# paru -S cerebras-bin
+#### Platform-Specific Packages
+
+If you prefer npm or the Homebrew installation doesn't work, install the platform-specific package:
+
+**macOS Intel:**
+```bash
+npm install -g cerebras-darwin-x64-baseline@latest
+ln -sf $(npm root -g)/cerebras-darwin-x64-baseline/bin/cerebras $(dirname $(which npm))/cerebras
+```
+
+**macOS Apple Silicon (M1/M2/M3):**
+```bash
+npm install -g cerebras-darwin-arm64@latest
+ln -sf $(npm root -g)/cerebras-darwin-arm64/bin/cerebras $(dirname $(which npm))/cerebras
+```
+
+**Linux x64:**
+```bash
+npm install -g cerebras-linux-x64@latest
+sudo ln -sf $(npm root -g)/cerebras-linux-x64/bin/cerebras /usr/local/bin/cerebras
+```
+
+**Linux ARM64:**
+```bash
+npm install -g cerebras-linux-arm64@latest
+sudo ln -sf $(npm root -g)/cerebras-linux-arm64/bin/cerebras /usr/local/bin/cerebras
+```
+
+**Windows x64:**
+```powershell
+npm install -g cerebras-windows-x64@latest
+# The cerebras.exe command should work automatically after installation
 ```
 
 > [!TIP]
 > Remove versions older than 0.1.x before installing.
 
-#### Installation Directory
+#### Verify Installation
 
-The install script respects the following priority order for the installation path:
-
-1. `$OPENCODE_INSTALL_DIR` - Custom installation directory
-2. `$XDG_BIN_DIR` - XDG Base Directory Specification compliant path
-3. `$HOME/bin` - Standard user binary directory (if exists or can be created)
-4. `$HOME/.opencode/bin` - Default fallback
+After installation, verify it works:
 
 ```bash
-# Examples
-OPENCODE_INSTALL_DIR=/usr/local/bin curl -fsSL https://opencode.ai/install | bash
-XDG_BIN_DIR=$HOME/.local/bin curl -fsSL https://opencode.ai/install | bash
+cerebras --version
 ```
 
 ### Agents
