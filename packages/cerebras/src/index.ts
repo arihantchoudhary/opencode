@@ -27,10 +27,11 @@ import { WebCommand } from "./cli/cmd/web"
 import { PrCommand } from "./cli/cmd/pr"
 import { authMiddleware } from "./middleware/auth"
 import { ensureOnboarded } from "./onboarding"
-import { initializeTracking } from "./tracking"
+// import { initializeTracking } from "./tracking"
 
 // Initialize usage tracking
-initializeTracking()
+// Temporarily disabled - needs Instance context fix
+// initializeTracking()
 
 process.on("unhandledRejection", (e) => {
   Log.Default.error("rejection", {
