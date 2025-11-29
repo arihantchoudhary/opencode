@@ -10,12 +10,29 @@ import { getCurrentUserId } from "../onboarding"
 import { Bus } from "../bus"
 import { Session } from "../session"
 import { MessageV2 } from "../session/message-v2"
+import { Auth } from "../auth"
 
 const log = Log.create({ service: "tracking" })
 
 // Public API endpoint for tracking
 const API_ENDPOINT =
   process.env.CEREBRAS_API_ENDPOINT || "https://kzjisuaj7pd2gbxsfiji2h7isi0ezxkx.lambda-url.us-east-1.on.aws"
+
+/**
+ * Get Cerebras API key for tracking
+ */
+async function getCerebrasApiKey(): Promise<string | null> {
+  try {
+    const auth = await Auth.get("cerebras")
+    if (auth?.type === "api") {
+      return auth.key
+    }
+    return null
+  } catch (error) {
+    log.debug("Failed to get Cerebras API key", { error })
+    return null
+  }
+}
 
 /**
  * Active sessions being tracked
@@ -45,6 +62,7 @@ async function writeSessionToAPI(data: {
   model: string
   platform: string
   cliVersion: string
+  apiKey?: string | null
 }): Promise<void> {
   try {
     const response = await fetch(`${API_ENDPOINT}/usage/sessions`, {
@@ -65,6 +83,7 @@ async function writeSessionToAPI(data: {
         model: data.model,
         platform: data.platform,
         cli_version: data.cliVersion,
+        api_key: data.apiKey || "",
       }),
     })
 
@@ -96,6 +115,7 @@ async function writeEventToAPI(data: {
   tokensUsed: number
   duration?: number
   metadata: Record<string, any>
+  apiKey?: string | null
 }): Promise<void> {
   try {
     const response = await fetch(`${API_ENDPOINT}/usage/events`, {
@@ -113,6 +133,7 @@ async function writeEventToAPI(data: {
         tokens_used: data.tokensUsed,
         duration: data.duration || 0,
         metadata: data.metadata,
+        api_key: data.apiKey || "",
       }),
     })
 
@@ -186,6 +207,9 @@ export async function trackToolCall(data: {
   // Update metrics
   await SessionMetrics.updateCache(data.sessionID, false) // Assume no cache for tool calls
 
+  // Get API key
+  const apiKey = await getCerebrasApiKey()
+
   // Write event to API
   const eventId = `evt_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
   await writeEventToAPI({
@@ -198,6 +222,7 @@ export async function trackToolCall(data: {
     tokensUsed: data.tokensUsed,
     duration: data.duration,
     metadata: data.metadata || {},
+    apiKey,
   })
 }
 
@@ -224,6 +249,9 @@ export async function endSessionTracking(sessionID: string): Promise<void> {
     duration: metrics.duration,
   })
 
+  // Get API key
+  const apiKey = await getCerebrasApiKey()
+
   // Write to API (which writes to DynamoDB)
   await writeSessionToAPI({
     userId: session.userId,
@@ -238,6 +266,7 @@ export async function endSessionTracking(sessionID: string): Promise<void> {
     model: metrics.model,
     platform: process.platform,
     cliVersion: process.env.npm_package_version || "unknown",
+    apiKey,
   })
 
   // Clear metrics
