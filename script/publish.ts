@@ -30,28 +30,28 @@ if (!Script.preview) {
       const log =
         await $`git log v${previous}..HEAD --oneline --format="%h %s" -- packages/cerebras packages/sdk packages/plugin`.text()
 
-    const commits = log
-      .split("\n")
-      .filter((line) => line && !line.match(/^\w+ (ignore:|test:|chore:|ci:)/i))
-      .join("\n")
+      const commits = log
+        .split("\n")
+        .filter((line) => line && !line.match(/^\w+ (ignore:|test:|chore:|ci:)/i))
+        .join("\n")
 
-    const opencode = await createOpencode()
-    const session = await opencode.client.session.create()
-    console.log("generating changelog since " + previous)
-    const raw = await opencode.client.session
-      .prompt({
-        path: {
-          id: session.data!.id,
-        },
-        body: {
-          model: {
-            providerID: "opencode",
-            modelID: "claude-haiku-4-5",
+      const opencode = await createOpencode()
+      const session = await opencode.client.session.create()
+      console.log("generating changelog since " + previous)
+      const raw = await opencode.client.session
+        .prompt({
+          path: {
+            id: session.data!.id,
           },
-          parts: [
-            {
-              type: "text",
-              text: `
+          body: {
+            model: {
+              providerID: "opencode",
+              modelID: "claude-haiku-4-5",
+            },
+            parts: [
+              {
+                type: "text",
+                text: `
           Analyze these commits and generate a changelog of all notable user facing changes.
 
           Commits between ${previous} and HEAD:
@@ -70,16 +70,16 @@ if (!Script.preview) {
           - Fixed a bug where the TUI would render improperly on some terminals
           </example>
           `,
-            },
-          ],
-        },
-      })
-      .then((x) => x.data?.parts?.find((y) => y.type === "text")?.text)
-    for (const line of raw?.split("\n") ?? []) {
-      if (line.startsWith("- ")) {
-        notes.push(line)
+              },
+            ],
+          },
+        })
+        .then((x) => x.data?.parts?.find((y) => y.type === "text")?.text)
+      for (const line of raw?.split("\n") ?? []) {
+        if (line.startsWith("- ")) {
+          notes.push(line)
+        }
       }
-    }
       console.log("---- Generated Changelog ----")
       console.log(notes.join("\n"))
       console.log("-----------------------------")
