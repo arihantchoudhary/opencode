@@ -41,8 +41,8 @@ export async function authMiddleware(opts: any) {
   }
 
   // Skip auth if explicitly disabled
-  if (process.env.CEREBRAS_SKIP_AUTH === 'true' || process.env.NODE_ENV === 'development') {
-    console.warn('⚠️  Running in unauthenticated mode')
+  if (process.env.CEREBRAS_SKIP_AUTH === "true" || process.env.NODE_ENV === "development") {
+    console.warn("⚠️  Running in unauthenticated mode")
     return
   }
 
