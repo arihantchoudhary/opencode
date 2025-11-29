@@ -182,13 +182,6 @@ export const AuthLoginCommand = cmd({
         const providers = await ModelsDev.get()
         const priority: Record<string, number> = {
           cerebras: 0,
-          anthropic: 1,
-          opencode: 2,
-          "github-copilot": 3,
-          openai: 4,
-          google: 5,
-          openrouter: 6,
-          vercel: 7,
         }
         let provider = await prompts.autocomplete({
           message: "Select provider",
@@ -197,6 +190,8 @@ export const AuthLoginCommand = cmd({
             ...pipe(
               providers,
               values(),
+              // Only show Cerebras provider
+              (arr) => arr.filter((x) => x.id === "cerebras"),
               sortBy(
                 (x) => priority[x.id] ?? 99,
                 (x) => x.name ?? x.id,
@@ -204,7 +199,7 @@ export const AuthLoginCommand = cmd({
               map((x) => ({
                 label: x.name,
                 value: x.id,
-                hint: priority[x.id] === 0 ? "⚡ fastest" : priority[x.id] === 1 ? "recommended" : undefined,
+                hint: "⚡ fastest",
               })),
             ),
             {
@@ -380,14 +375,6 @@ export const AuthLoginCommand = cmd({
         if (provider === "cerebras") {
           prompts.log.info("🚀 Get your Cerebras API key at: https://cloud.cerebras.ai/")
           prompts.log.message("   Navigate to: Settings → API Keys → Create New Key\n")
-        }
-
-        if (provider === "opencode") {
-          prompts.log.info("Create an api key at https://cerebras.dev/auth")
-        }
-
-        if (provider === "vercel") {
-          prompts.log.info("You can create an api key at https://vercel.link/ai-gateway-token")
         }
 
         const key = await prompts.password({
