@@ -14,6 +14,7 @@ import { SessionStatus } from "./status"
 import { NamedError } from "@cerebras-ai/util/error"
 import { AbuseDetection } from "./abuse-detection"
 import { TokenBudget } from "./token-budget"
+import { trackTokenUsage, trackToolCall, startSessionTracking } from "../tracking"
 
 export namespace SessionProcessor {
   const DOOM_LOOP_THRESHOLD = 3
@@ -183,6 +184,9 @@ export namespace SessionProcessor {
                 case "tool-result": {
                   const match = toolcalls[value.toolCallId]
                   if (match && match.state.status === "running") {
+                    const endTime = Date.now()
+                    const duration = endTime - match.state.time.start
+
                     await Session.updatePart({
                       ...match,
                       state: {
@@ -193,9 +197,22 @@ export namespace SessionProcessor {
                         title: value.output.title,
                         time: {
                           start: match.state.time.start,
-                          end: Date.now(),
+                          end: endTime,
                         },
                         attachments: value.output.attachments,
+                      },
+                    })
+
+                    // Track tool call event for analytics
+                    await trackToolCall({
+                      sessionID: input.sessionID,
+                      toolName: match.tool,
+                      tokensUsed: 0, // Tools don't directly use tokens
+                      duration,
+                      metadata: {
+                        success: true,
+                        title: value.output.title,
+                        ...value.output.metadata,
                       },
                     })
 
@@ -258,6 +275,9 @@ export namespace SessionProcessor {
                     inputTokens: usage.tokens.input,
                     outputTokens: usage.tokens.output,
                   })
+
+                  // Track usage for analytics
+                  trackTokenUsage(input.sessionID, usage.tokens.input, usage.tokens.output)
 
                   // Block if budget exceeded
                   if (!budgetResult.allowed) {

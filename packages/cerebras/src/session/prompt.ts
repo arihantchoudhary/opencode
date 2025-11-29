@@ -51,6 +51,7 @@ import { TaskTool } from "@/tool/task"
 import { SessionStatus } from "./status"
 import { AbuseDetection } from "./abuse-detection"
 import { CacheOptimizer } from "./cache-optimizer"
+import { startSessionTracking } from "../tracking"
 
 // @ts-ignore
 globalThis.AI_SDK_LOG_WARNINGS = false
@@ -470,6 +471,12 @@ export namespace SessionPrompt {
         providerID: model.providerID,
         abort,
       })
+
+      // Start tracking session metrics for this user
+      if (step === 1) {
+        startSessionTracking(sessionID, model.info.id)
+      }
+
       const system = await resolveSystemPrompt({
         providerID: model.providerID,
         modelID: model.info.id,
