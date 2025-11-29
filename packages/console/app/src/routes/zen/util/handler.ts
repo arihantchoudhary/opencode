@@ -48,7 +48,7 @@ export async function handler(
   type ProviderInfo = Awaited<ReturnType<typeof selectProvider>>
 
   const MAX_RETRIES = 3
-  const FREE_WORKSPACES = [
+  const FREE_WORKSPACES: string[] = [
     // Add free workspace IDs here if needed
     // "wrk_01K46JDFR0E75SG2Q8K172KF3Y", // example
   ]

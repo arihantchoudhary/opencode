@@ -26,11 +26,6 @@ import { EOL } from "os"
 import { WebCommand } from "./cli/cmd/web"
 import { PrCommand } from "./cli/cmd/pr"
 import { authMiddleware } from "./middleware/auth"
-import { ensureOnboarded } from "./onboarding"
-import { initializeTracking } from "./tracking"
-
-// Initialize usage tracking
-initializeTracking()
 
 process.on("unhandledRejection", (e) => {
   Log.Default.error("rejection", {
@@ -79,17 +74,6 @@ const cli = yargs(hideBin(process.argv))
     })
   })
   .middleware(authMiddleware)
-  .middleware(async (argv) => {
-    // Skip onboarding for help/version commands
-    const skipCommands = ["help", "version", "-h", "--help", "-v", "--version"]
-    const args = process.argv.slice(2)
-    if (args.some(arg => skipCommands.includes(arg))) {
-      return
-    }
-
-    // Run onboarding on first launch
-    await ensureOnboarded()
-  })
   .usage("\n" + UI.logo())
   .command(AcpCommand)
   .command(McpCommand)
