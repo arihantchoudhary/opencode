@@ -83,7 +83,7 @@ const cli = yargs(hideBin(process.argv))
     // Skip onboarding for help/version commands
     const skipCommands = ["help", "version", "-h", "--help", "-v", "--version"]
     const args = process.argv.slice(2)
-    if (args.some(arg => skipCommands.includes(arg))) {
+    if (args.some((arg) => skipCommands.includes(arg))) {
       return
     }
 

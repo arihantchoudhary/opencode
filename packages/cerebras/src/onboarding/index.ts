@@ -215,7 +215,7 @@ export async function runOnboarding(): Promise<UserProfile> {
     userId: generateUserId(),
     name: name as string,
     email: email as string,
-    company: company as string || undefined,
+    company: (company as string) || undefined,
     role: role as string,
     createdAt: new Date().toISOString(),
   }

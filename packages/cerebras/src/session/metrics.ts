@@ -95,11 +95,7 @@ export namespace SessionMetrics {
   /**
    * Calculate cost for tokens
    */
-  export function calculateCost(
-    model: string,
-    inputTokens: number,
-    outputTokens: number,
-  ): number {
+  export function calculateCost(model: string, inputTokens: number, outputTokens: number): number {
     const pricing = MODEL_PRICING[model] || MODEL_PRICING["claude-sonnet-4-5"]
     const inputCost = (inputTokens / 1_000_000) * pricing.input
     const outputCost = (outputTokens / 1_000_000) * pricing.output

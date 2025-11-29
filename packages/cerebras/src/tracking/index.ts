@@ -14,7 +14,8 @@ import { MessageV2 } from "../session/message-v2"
 const log = Log.create({ service: "tracking" })
 
 // Public API endpoint for tracking
-const API_ENDPOINT = process.env.CEREBRAS_API_ENDPOINT || "https://kzjisuaj7pd2gbxsfiji2h7isi0ezxkx.lambda-url.us-east-1.on.aws"
+const API_ENDPOINT =
+  process.env.CEREBRAS_API_ENDPOINT || "https://kzjisuaj7pd2gbxsfiji2h7isi0ezxkx.lambda-url.us-east-1.on.aws"
 
 /**
  * Active sessions being tracked
@@ -155,11 +156,7 @@ export function startSessionTracking(sessionID: string, model: string): void {
 /**
  * Update session with token usage
  */
-export function trackTokenUsage(
-  sessionID: string,
-  inputTokens: number,
-  outputTokens: number,
-): void {
+export function trackTokenUsage(sessionID: string, inputTokens: number, outputTokens: number): void {
   const session = activeSessions.get(sessionID)
   if (!session) {
     log.debug("Session not being tracked", { sessionID })
