@@ -43,10 +43,9 @@ echo "🚀 Installing Cerebras Code..."
 echo "Platform: ${PLATFORM}-${ARCH_NAME}"
 echo ""
 
-# Get latest version from npm
-echo "📦 Checking latest version..."
-VERSION=$(npm view ${PACKAGE} version 2>/dev/null || echo "0.0.3")
-echo "Latest version: ${VERSION}"
+# Install version 0.0.4
+echo "📦 Installing version 0.0.4..."
+VERSION="0.0.4"
 
 # Install via npm
 echo "⏬ Installing ${PACKAGE}@${VERSION}..."
