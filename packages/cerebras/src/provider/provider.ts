@@ -69,15 +69,17 @@ export namespace Provider {
     const config = await Config.get()
     let database = await ModelsDev.get()
 
-    // Only allow Cerebras provider
-    database = Object.fromEntries(Object.entries(database).filter(([providerID]) => providerID === "cerebras"))
+    // Remove Anthropic provider, keep everything else
+    database = Object.fromEntries(
+      Object.entries(database).filter(([providerID]) => providerID !== "anthropic" && !providerID.startsWith("anthropic/"))
+    )
 
     const disabled = new Set(config.disabled_providers ?? [])
     const enabled = config.enabled_providers ? new Set(config.enabled_providers) : null
 
     function isProviderAllowed(providerID: string): boolean {
-      // Only allow Cerebras
-      if (providerID !== "cerebras") return false
+      // Block Anthropic
+      if (providerID === "anthropic" || providerID.startsWith("anthropic/")) return false
       if (enabled && !enabled.has(providerID)) return false
       if (disabled.has(providerID)) return false
       return true
