@@ -27,11 +27,7 @@ import { WebCommand } from "./cli/cmd/web"
 import { PrCommand } from "./cli/cmd/pr"
 import { authMiddleware } from "./middleware/auth"
 import { ensureOnboarded } from "./onboarding"
-// import { initializeTracking } from "./tracking"
-
-// Initialize usage tracking
-// Temporarily disabled - needs Instance context fix
-// initializeTracking()
+import { initializeTracking } from "./tracking"
 
 process.on("unhandledRejection", (e) => {
   Log.Default.error("rejection", {
@@ -73,6 +69,9 @@ const cli = yargs(hideBin(process.argv))
 
     process.env.AGENT = "1"
     process.env.CEREBRAS = "1"
+
+    // Initialize usage tracking after Log is ready
+    initializeTracking()
 
     Log.Default.info("cerebras", {
       version: Installation.VERSION,
