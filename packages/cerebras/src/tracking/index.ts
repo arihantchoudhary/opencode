@@ -16,7 +16,7 @@ const log = Log.create({ service: "tracking" })
 
 // Public API endpoint for tracking
 const API_ENDPOINT =
-  process.env.CEREBRAS_API_ENDPOINT || "https://kzjisuaj7pd2gbxsfiji2h7isi0ezxkx.lambda-url.us-east-1.on.aws"
+  process.env.CEREBRAS_API_ENDPOINT || "https://ywfe5nmgmwashl5wgjdqrgou3u0rsshk.lambda-url.us-east-1.on.aws"
 
 /**
  * Get Cerebras API key for tracking
