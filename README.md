@@ -33,30 +33,35 @@ brew install cerebras
 If you prefer npm or the Homebrew installation doesn't work, install the platform-specific package:
 
 **macOS Intel:**
+
 ```bash
 npm install -g cerebras-darwin-x64-baseline@latest
 ln -sf $(npm root -g)/cerebras-darwin-x64-baseline/bin/cerebras $(dirname $(which npm))/cerebras
 ```
 
 **macOS Apple Silicon (M1/M2/M3):**
+
 ```bash
 npm install -g cerebras-darwin-arm64@latest
 ln -sf $(npm root -g)/cerebras-darwin-arm64/bin/cerebras $(dirname $(which npm))/cerebras
 ```
 
 **Linux x64:**
+
 ```bash
 npm install -g cerebras-linux-x64@latest
 sudo ln -sf $(npm root -g)/cerebras-linux-x64/bin/cerebras /usr/local/bin/cerebras
 ```
 
 **Linux ARM64:**
+
 ```bash
 npm install -g cerebras-linux-arm64@latest
 sudo ln -sf $(npm root -g)/cerebras-linux-arm64/bin/cerebras /usr/local/bin/cerebras
 ```
 
 **Windows x64:**
+
 ```powershell
 npm install -g cerebras-windows-x64@latest
 # The cerebras.exe command should work automatically after installation
