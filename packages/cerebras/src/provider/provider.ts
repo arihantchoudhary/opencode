@@ -71,7 +71,9 @@ export namespace Provider {
 
     // Remove Anthropic provider, keep everything else
     database = Object.fromEntries(
-      Object.entries(database).filter(([providerID]) => providerID !== "anthropic" && !providerID.startsWith("anthropic/"))
+      Object.entries(database).filter(
+        ([providerID]) => providerID !== "anthropic" && !providerID.startsWith("anthropic/"),
+      ),
     )
 
     const disabled = new Set(config.disabled_providers ?? [])
