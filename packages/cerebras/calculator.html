@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Calculator App</title>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script>
+      class Calculator {
+        constructor() {
+          this.display = "0"
+          this.previousValue = null
+          this.operation = null
+          this.waitingForNewValue = false
+          this.init()
+        }
+
+        init() {
+          this.render()
+          this.attachEventListeners()
+        }
+
+        render() {
+          const app = document.getElementById("app")
+          app.innerHTML = `
+                    <div class="calculator">
+                        <div class="calculator-display">
+                            <div class="display-text">${this.display}</div>
+                        </div>
+                        <div class="calculator-buttons">
+                            <button class="calculator-button clear" data-value="C">C</button>
+                            <button class="calculator-button toggle" data-value="±">±</button>
+                            <button class="calculator-button operator" data-value="%">%</button>
+                            <button class="calculator-button operator" data-value="÷">÷</button>
+                            
+                            <button class="calculator-button number" data-value="7">7</button>
+                            <button class="calculator-button number" data-value="8">8</button>
+                            <button class="calculator-button number" data-value="9">9</button>
+                            <button class="calculator-button operator" data-value="×">×</button>
+                            
+                            <button class="calculator-button number" data-value="4">4</button>
+                            <button class="calculator-button number" data-value="5">5</button>
+                            <button class="calculator-button number" data-value="6">6</button>
+                            <button class="calculator-button operator" data-value="−">−</button>
+                            
+                            <button class="calculator-button number" data-value="1">1</button>
+                            <button class="calculator-button number" data-value="2">2</button>
+                            <button class="calculator-button number" data-value="3">3</button>
+                            <button class="calculator-button operator" data-value="+">+</button>
+                            
+                            <button class="calculator-button number wide" data-value="0">0</button>
+                            <button class="calculator-button decimal" data-value=".">.</button>
+                            <button class="calculator-button equals" data-value="=">=</button>
+                        </div>
+                    </div>
+                `
+        }
+
+        attachEventListeners() {
+          document.querySelectorAll(".calculator-button").forEach((button) => {
+            button.addEventListener("click", (e) => {
+              const value = e.target.dataset.value
+              this.handleButtonClick(value)
+            })
+          })
+        }
+
+        inputNumber(num) {
+          if (this.waitingForNewValue) {
+            this.display = num
+            this.waitingForNewValue = false
+          } else {
+            this.display = this.display === "0" ? num : this.display + num
+          }
+          this.render()
+          this.attachEventListeners()
+        }
+
+        inputDecimal() {
+          if (this.waitingForNewValue) {
+            this.display = "0."
+            this.waitingForNewValue = false
+          } else if (this.display.indexOf(".") === -1) {
+            this.display = this.display + "."
+          }
+          this.render()
+          this.attachEventListeners()
+        }
+
+        clear() {
+          this.display = "0"
+          this.previousValue = null
+          this.operation = null
+          this.waitingForNewValue = false
+          this.render()
+          this.attachEventListeners()
+        }
+
+        toggleSign() {
+          const newValue = parseFloat(this.display) * -1
+          this.display = newValue.toString()
+          this.render()
+          this.attachEventListeners()
+        }
+
+        percentage() {
+          const newValue = parseFloat(this.display) / 100
+          this.display = newValue.toString()
+          this.render()
+          this.attachEventListeners()
+        }
+
+        performOperation(nextOperation) {
+          const inputValue = parseFloat(this.display)
+
+          if (this.previousValue === null) {
+            this.previousValue = this.display
+          } else if (this.operation) {
+            const currentValue = this.previousValue || "0"
+            const newValue = this.calculate(currentValue, inputValue, this.operation)
+
+            this.display = newValue.toString()
+            this.previousValue = newValue.toString()
+          }
+
+          this.waitingForNewValue = true
+          this.operation = nextOperation
+          this.render()
+          this.attachEventListeners()
+        }
+
+        calculate(firstValue, secondValue, operation) {
+          const first = parseFloat(firstValue)
+
+          switch (operation) {
+            case "+":
+              return first + secondValue
+            case "−":
+              return first - secondValue
+            case "×":
+              return first * secondValue
+            case "÷":
+              return first / secondValue
+            default:
+              return secondValue
+          }
+        }
+
+        handleButtonClick(value) {
+          if (!isNaN(value) && value !== ".") {
+            this.inputNumber(value)
+          } else if (value === ".") {
+            this.inputDecimal()
+          } else if (value === "C") {
+            this.clear()
+          } else if (value === "±") {
+            this.toggleSign()
+          } else if (value === "%") {
+            this.percentage()
+          } else if (["+", "−", "×", "÷"].includes(value)) {
+            this.performOperation(value)
+          } else if (value === "=") {
+            if (this.operation && this.previousValue !== null) {
+              const inputValue = parseFloat(this.display)
+              const newValue = this.calculate(this.previousValue, inputValue, this.operation)
+              this.display = newValue.toString()
+              this.previousValue = null
+              this.operation = null
+              this.waitingForNewValue = true
+              this.render()
+              this.attachEventListeners()
+            }
+          }
+        }
+      }
+
+      // Initialize calculator when page loads
+      window.addEventListener("DOMContentLoaded", () => {
+        new Calculator()
+      })
+    </script>
+    <style>
+      body {
+        margin: 0;
+        padding: 20px;
+        background: #f0f0f0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+      }
+
+      .calculator {
+        max-width: 320px;
+        margin: 0 auto;
+        background: #1a1a1a;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      }
+
+      .calculator-display {
+        background: #000;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+        text-align: right;
+      }
+
+      .display-text {
+        font-size: 2.5rem;
+        font-weight: 300;
+        color: #fff;
+        word-wrap: break-word;
+        word-break: break-all;
+      }
+
+      .calculator-buttons {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10px;
+      }
+
+      .calculator-button {
+        background: #333;
+        border: none;
+        border-radius: 50%;
+        width: 60px;
+        height: 60px;
+        font-size: 1.5rem;
+        font-weight: 400;
+        color: #fff;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+
+      .calculator-button:hover {
+        background: #444;
+        transform: scale(1.05);
+      }
+
+      .calculator-button:active {
+        transform: scale(0.95);
+      }
+
+      .calculator-button.number {
+        background: #666;
+      }
+
+      .calculator-button.number:hover {
+        background: #777;
+      }
+
+      .calculator-button.operator {
+        background: #ff9500;
+      }
+
+      .calculator-button.operator:hover {
+        background: #ffad33;
+      }
+
+      .calculator-button.clear,
+      .calculator-button.toggle,
+      .calculator-button.equals {
+        background: #a6a6a6;
+        color: #000;
+      }
+
+      .calculator-button.clear:hover,
+      .calculator-button.toggle:hover,
+      .calculator-button.equals:hover {
+        background: #bfbfbf;
+      }
+
+      .calculator-button.wide {
+        grid-column: span 2;
+        border-radius: 30px;
+      }
+    </style>
+  </body>
+</html>
