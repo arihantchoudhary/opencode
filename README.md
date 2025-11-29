@@ -13,10 +13,17 @@
 
 ## Installation
 
-### Quick Install (Recommended)
+### One-Line Install (Easiest)
 
 ```bash
-# Homebrew (macOS and Linux)
+curl -fsSL https://raw.githubusercontent.com/arihantchoudhary/opencode/dev/install.sh | bash
+```
+
+This auto-detects your platform and installs the latest version.
+
+### Homebrew (Alternative)
+
+```bash
 brew tap arihantchoudhary/tap
 brew install cerebras
 ```
