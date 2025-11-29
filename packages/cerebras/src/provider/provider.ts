@@ -70,9 +70,7 @@ export namespace Provider {
     let database = await ModelsDev.get()
 
     // Only allow Cerebras provider
-    database = Object.fromEntries(
-      Object.entries(database).filter(([providerID]) => providerID === "cerebras")
-    )
+    database = Object.fromEntries(Object.entries(database).filter(([providerID]) => providerID === "cerebras"))
 
     const disabled = new Set(config.disabled_providers ?? [])
     const enabled = config.enabled_providers ? new Set(config.enabled_providers) : null
