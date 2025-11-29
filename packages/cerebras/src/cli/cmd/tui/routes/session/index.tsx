@@ -1141,11 +1141,7 @@ function AssistantMessage(props: { message: AssistantMessage; parts: Part[]; las
               )}
             </Show>
             <Show when={"param" in error().data && (error().data as any).param}>
-              {(param) => (
-                <text fg={theme.textMuted}>
-                  Parameter: {param()}
-                </text>
-              )}
+              {(param) => <text fg={theme.textMuted}>Parameter: {param()}</text>}
             </Show>
           </box>
         )}
