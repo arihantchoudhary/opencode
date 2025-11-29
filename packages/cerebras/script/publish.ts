@@ -110,7 +110,9 @@ if (process.env.NPM_CONFIG_TOKEN) {
           throw error
         }
         const waitTime = Math.pow(2, mainRetries) * 120000 // Exponential backoff: 4min, 8min, 16min, 32min, 64min
-        console.log(`⚠️  Rate limited on main package, retry ${mainRetries}/${maxMainRetries} in ${waitTime / 60000} minutes...`)
+        console.log(
+          `⚠️  Rate limited on main package, retry ${mainRetries}/${maxMainRetries} in ${waitTime / 60000} minutes...`,
+        )
         await new Promise((resolve) => setTimeout(resolve, waitTime))
       } else {
         throw error // Not a rate limit error, rethrow
