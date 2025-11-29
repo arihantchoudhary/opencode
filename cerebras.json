@@ -1,0 +1,14 @@
+{
+  "$schema": "https://cerebras.dev/config.json",
+  "model": "cerebras/zai-glm-4.6",
+  "enabled_providers": ["cerebras"],
+  "provider": {
+    "cerebras": {
+      "whitelist": [
+        "zai-glm-4.6",
+        "qwen-3-235b-a22b-instruct-2507",
+        "gpt-oss-120b"
+      ]
+    }
+  }
+}

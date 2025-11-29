@@ -1119,18 +1119,36 @@ function AssistantMessage(props: { message: AssistantMessage; parts: Part[]; las
         }}
       </For>
       <Show when={props.message.error}>
-        <box
-          border={["left"]}
-          paddingTop={1}
-          paddingBottom={1}
-          paddingLeft={2}
-          marginTop={1}
-          backgroundColor={theme.backgroundPanel}
-          customBorderChars={SplitBorder.customBorderChars}
-          borderColor={theme.error}
-        >
-          <text fg={theme.textMuted}>{props.message.error?.data.message}</text>
-        </box>
+        {(error) => (
+          <box
+            border={["left"]}
+            paddingTop={1}
+            paddingBottom={1}
+            paddingLeft={2}
+            marginTop={1}
+            backgroundColor={theme.backgroundPanel}
+            customBorderChars={SplitBorder.customBorderChars}
+            borderColor={theme.error}
+          >
+            <text fg={theme.error} attributes={0x200}>
+              ❌ Error: {error().data.message}
+            </text>
+            <Show when={"type" in error().data && (error().data as any).type}>
+              {(type) => (
+                <text fg={theme.textMuted} marginTop={1}>
+                  Type: {type()}
+                </text>
+              )}
+            </Show>
+            <Show when={"param" in error().data && (error().data as any).param}>
+              {(param) => (
+                <text fg={theme.textMuted}>
+                  Parameter: {param()}
+                </text>
+              )}
+            </Show>
+          </box>
+        )}
       </Show>
       <Switch>
         <Match when={props.last || final()}>
