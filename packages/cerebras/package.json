@@ -50,6 +50,7 @@
     "@ai-sdk/mcp": "0.0.8",
     "@ai-sdk/openai": "2.0.71",
     "@ai-sdk/openai-compatible": "1.0.27",
+    "@aws-sdk/client-dynamodb": "3.940.0",
     "@cerebras-ai/plugin": "workspace:*",
     "@cerebras-ai/script": "workspace:*",
     "@cerebras-ai/sdk": "workspace:*",
