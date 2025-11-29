@@ -49,8 +49,8 @@ export async function handler(
 
   const MAX_RETRIES = 3
   const FREE_WORKSPACES = [
-    "wrk_01K46JDFR0E75SG2Q8K172KF3Y", // frank
-    "wrk_01K6W1A3VE0KMNVSCQT43BG2SX", // opencode bench
+    // Add free workspace IDs here if needed
+    // "wrk_01K46JDFR0E75SG2Q8K172KF3Y", // example
   ]
 
   try {
@@ -517,7 +517,12 @@ export async function handler(
 
     if (!authInfo) return
 
-    const cost = authInfo.isFree || authInfo.provider?.credentials ? 0 : centsToMicroCents(totalCostInCent)
+    // Always calculate the full cost for usage tracking
+    const usageCost = centsToMicroCents(totalCostInCent)
+
+    // Only charge if not using own API keys and not a free workspace
+    const billableCost = authInfo.isFree || authInfo.provider?.credentials ? 0 : usageCost
+
     await Database.transaction(async (tx) => {
       await tx.insert(UsageTable).values({
         workspaceID: authInfo.workspaceID,
@@ -530,34 +535,38 @@ export async function handler(
         cacheReadTokens,
         cacheWrite5mTokens,
         cacheWrite1hTokens,
-        cost,
+        cost: usageCost, // Always store the calculated cost for display
         keyID: authInfo.apiKeyId,
       })
-      await tx
-        .update(BillingTable)
-        .set({
-          balance: sql`${BillingTable.balance} - ${cost}`,
-          monthlyUsage: sql`
-              CASE
-                WHEN MONTH(${BillingTable.timeMonthlyUsageUpdated}) = MONTH(now()) AND YEAR(${BillingTable.timeMonthlyUsageUpdated}) = YEAR(now()) THEN ${BillingTable.monthlyUsage} + ${cost}
-                ELSE ${cost}
-              END
-            `,
-          timeMonthlyUsageUpdated: sql`now()`,
-        })
-        .where(eq(BillingTable.workspaceID, authInfo.workspaceID))
-      await tx
-        .update(UserTable)
-        .set({
-          monthlyUsage: sql`
-              CASE
-                WHEN MONTH(${UserTable.timeMonthlyUsageUpdated}) = MONTH(now()) AND YEAR(${UserTable.timeMonthlyUsageUpdated}) = YEAR(now()) THEN ${UserTable.monthlyUsage} + ${cost}
-                ELSE ${cost}
-              END
-            `,
-          timeMonthlyUsageUpdated: sql`now()`,
-        })
-        .where(and(eq(UserTable.workspaceID, authInfo.workspaceID), eq(UserTable.id, authInfo.user.id)))
+
+      // Only update billing balance if cost is billable
+      if (billableCost > 0) {
+        await tx
+          .update(BillingTable)
+          .set({
+            balance: sql`${BillingTable.balance} - ${billableCost}`,
+            monthlyUsage: sql`
+                CASE
+                  WHEN MONTH(${BillingTable.timeMonthlyUsageUpdated}) = MONTH(now()) AND YEAR(${BillingTable.timeMonthlyUsageUpdated}) = YEAR(now()) THEN ${BillingTable.monthlyUsage} + ${billableCost}
+                  ELSE ${billableCost}
+                END
+              `,
+            timeMonthlyUsageUpdated: sql`now()`,
+          })
+          .where(eq(BillingTable.workspaceID, authInfo.workspaceID))
+        await tx
+          .update(UserTable)
+          .set({
+            monthlyUsage: sql`
+                CASE
+                  WHEN MONTH(${UserTable.timeMonthlyUsageUpdated}) = MONTH(now()) AND YEAR(${UserTable.timeMonthlyUsageUpdated}) = YEAR(now()) THEN ${UserTable.monthlyUsage} + ${billableCost}
+                  ELSE ${billableCost}
+                END
+              `,
+            timeMonthlyUsageUpdated: sql`now()`,
+          })
+          .where(and(eq(UserTable.workspaceID, authInfo.workspaceID), eq(UserTable.id, authInfo.user.id)))
+      }
     })
 
     await Database.use((tx) =>
