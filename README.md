@@ -1,134 +1,215 @@
-<p align="center">
-  <a href="https://opencode.ai">
-    <picture>
-      <source srcset="packages/console/app/src/asset/logo-ornate-dark.svg" media="(prefers-color-scheme: dark)">
-      <source srcset="packages/console/app/src/asset/logo-ornate-light.svg" media="(prefers-color-scheme: light)">
-      <img src="packages/console/app/src/asset/logo-ornate-light.svg" alt="OpenCode logo">
-    </picture>
-  </a>
-</p>
-<p align="center">The open source AI coding agent.</p>
-<p align="center">
-  <a href="https://opencode.ai/discord"><img alt="Discord" src="https://img.shields.io/discord/1391832426048651334?style=flat-square&label=discord" /></a>
-  <a href="https://www.npmjs.com/package/opencode-ai"><img alt="npm" src="https://img.shields.io/npm/v/opencode-ai?style=flat-square" /></a>
-  <a href="https://github.com/anomalyco/opencode/actions/workflows/publish.yml"><img alt="Build status" src="https://img.shields.io/github/actions/workflow/status/anomalyco/opencode/publish.yml?style=flat-square&branch=dev" /></a>
-</p>
+# Stardrop
 
-<p align="center">
-  <a href="README.md">English</a> |
-  <a href="README.zh.md">简体中文</a> |
-  <a href="README.zht.md">繁體中文</a> |
-  <a href="README.ko.md">한국어</a> |
-  <a href="README.de.md">Deutsch</a> |
-  <a href="README.es.md">Español</a> |
-  <a href="README.fr.md">Français</a> |
-  <a href="README.it.md">Italiano</a> |
-  <a href="README.da.md">Dansk</a> |
-  <a href="README.ja.md">日本語</a> |
-  <a href="README.pl.md">Polski</a> |
-  <a href="README.ru.md">Русский</a> |
-  <a href="README.ar.md">العربية</a> |
-  <a href="README.no.md">Norsk</a> |
-  <a href="README.br.md">Português (Brasil)</a> |
-  <a href="README.th.md">ไทย</a>
-</p>
+**I'm Stardrop, an AI Agent made by Nikki Lin and Arihant Choudhary that turns your software wishes into reality.**
 
-[![OpenCode Terminal UI](packages/web/src/assets/lander/screenshot.png)](https://opencode.ai)
+Send me what you want me to build for you at: **stardroplin@stanford.edu** or add me to your GitHub repo and `npm i -g stardrop`
+
+My source code can be found here: [github.com/arihantchoudhary/opencode](https://github.com/arihantchoudhary/opencode)
 
 ---
 
-### Installation
+## What is Stardrop?
 
-```bash
-# YOLO
-curl -fsSL https://opencode.ai/install | bash
+Stardrop is an AI coding agent that turns tickets into deployed code. Point me at a GitHub issue, describe what you want, and I'll read your codebase, ask clarifying questions, and ship small, reviewable changes to a live preview.
 
-# Package managers
-npm i -g opencode-ai@latest        # or bun/pnpm/yarn
-scoop install opencode             # Windows
-choco install opencode             # Windows
-brew install anomalyco/tap/opencode # macOS and Linux (recommended, always up to date)
-brew install opencode              # macOS and Linux (official brew formula, updated less)
-paru -S opencode-bin               # Arch Linux
-mise use -g opencode               # Any OS
-nix run nixpkgs#opencode           # or github:anomalyco/opencode for latest dev branch
-```
+### How I Work
 
-> [!TIP]
-> Remove versions older than 0.1.x before installing.
-
-### Desktop App (BETA)
-
-OpenCode is also available as a desktop application. Download directly from the [releases page](https://github.com/anomalyco/opencode/releases) or [opencode.ai/download](https://opencode.ai/download).
-
-| Platform              | Download                              |
-| --------------------- | ------------------------------------- |
-| macOS (Apple Silicon) | `opencode-desktop-darwin-aarch64.dmg` |
-| macOS (Intel)         | `opencode-desktop-darwin-x64.dmg`     |
-| Windows               | `opencode-desktop-windows-x64.exe`    |
-| Linux                 | `.deb`, `.rpm`, or AppImage           |
-
-```bash
-# macOS (Homebrew)
-brew install --cask opencode-desktop
-# Windows (Scoop)
-scoop bucket add extras; scoop install extras/opencode-desktop
-```
-
-#### Installation Directory
-
-The install script respects the following priority order for the installation path:
-
-1. `$OPENCODE_INSTALL_DIR` - Custom installation directory
-2. `$XDG_BIN_DIR` - XDG Base Directory Specification compliant path
-3. `$HOME/bin` - Standard user binary directory (if exists or can be created)
-4. `$HOME/.opencode/bin` - Default fallback
-
-```bash
-# Examples
-OPENCODE_INSTALL_DIR=/usr/local/bin curl -fsSL https://opencode.ai/install | bash
-XDG_BIN_DIR=$HOME/.local/bin curl -fsSL https://opencode.ai/install | bash
-```
-
-### Agents
-
-OpenCode includes two built-in agents you can switch between with the `Tab` key.
-
-- **build** - Default, full access agent for development work
-- **plan** - Read-only agent for analysis and code exploration
-  - Denies file edits by default
-  - Asks permission before running bash commands
-  - Ideal for exploring unfamiliar codebases or planning changes
-
-Also, included is a **general** subagent for complex searches and multistep tasks.
-This is used internally and can be invoked using `@general` in messages.
-
-Learn more about [agents](https://opencode.ai/docs/agents).
-
-### Documentation
-
-For more info on how to configure OpenCode [**head over to our docs**](https://opencode.ai/docs).
-
-### Contributing
-
-If you're interested in contributing to OpenCode, please read our [contributing docs](./CONTRIBUTING.md) before submitting a pull request.
-
-### Building on OpenCode
-
-If you are working on a project that's related to OpenCode and is using "opencode" as a part of its name; for example, "opencode-dashboard" or "opencode-mobile", please add a note to your README to clarify that it is not built by the OpenCode team and is not affiliated with us in any way.
-
-### FAQ
-
-#### How is this different from Claude Code?
-
-It's very similar to Claude Code in terms of capability. Here are the key differences:
-
-- 100% open source
-- Not coupled to any provider. Although we recommend the models we provide through [OpenCode Zen](https://opencode.ai/zen); OpenCode can be used with Claude, OpenAI, Google or even local models. As models evolve the gaps between them will close and pricing will drop so being provider-agnostic is important.
-- Out of the box LSP support
-- A focus on TUI. OpenCode is built by neovim users and the creators of [terminal.shop](https://terminal.shop); we are going to push the limits of what's possible in the terminal.
-- A client/server architecture. This for example can allow OpenCode to run on your computer, while you can drive it remotely from a mobile app. Meaning that the TUI frontend is just one of the possible clients.
+1. You open a ticket or request describing what you want.
+2. I read the repository and the relevant files.
+3. I ask any clarifying questions needed to make the change safe and correct.
+4. I make small, reviewable changes and deploy a live preview when possible.
+5. You review, request updates if needed, and merge.
 
 ---
 
-**Join our community** [Discord](https://discord.gg/opencode) | [X.com](https://x.com/opencode)
+## Get Started
+
+```bash
+npm i -g stardrop
+```
+
+Then run in any project directory:
+
+```bash
+stardrop            # Launch the interactive TUI
+stardrop serve      # Start the headless API server
+stardrop run        # Execute a prompt non-interactively
+```
+
+---
+
+## What Exists Today
+
+Stardrop is built on a full-stack AI agent platform. Here's what's already working:
+
+### AI Agent Engine
+
+The core loop — prompt, reason, use tools, repeat — is fully implemented. Stardrop creates sessions, sends prompts to LLMs, executes tools based on the response, and iterates until the task is done.
+
+- **Sessions** — isolated units of work with full message history, forking, compaction, and summarization
+- **Agents** — configurable modes (`build` for full access, `plan` for read-only analysis)
+- **Permission System** — fine-grained control over what tools can do (read, write, bash, edit) with pattern matching and per-file rules
+
+### 30+ Built-in Tools
+
+| Tool | What it does |
+|------|-------------|
+| `bash` | Execute shell commands |
+| `read` / `write` / `edit` | File operations |
+| `glob` / `grep` | File search and code search (ripgrep) |
+| `apply_patch` | Apply patches to files |
+| `lsp` | Language Server Protocol integration |
+| `webfetch` / `websearch` | Fetch web pages, search the web |
+| `question` | Ask clarifying questions |
+| `task` / `todo` | Task tracking |
+| `skill` | Load and execute custom skills |
+| `plan` | Enter/exit planning mode |
+| `batch` / `multiedit` | Batch operations, multi-file edits |
+
+### 20+ LLM Providers
+
+Anthropic, OpenAI, Google Gemini, Azure OpenAI, Amazon Bedrock, Mistral, Groq, DeepInfra, Cerebras, Cohere, Together AI, Perplexity, X.AI, OpenRouter, GitHub Copilot, GitLab, Ollama, and more.
+
+### HTTP API Server
+
+A Hono-based server with OpenAPI spec exposing everything programmatically:
+
+| Endpoint | Purpose |
+|----------|---------|
+| `POST /session` | Create a new session |
+| `POST /session/:id/prompt` | Send a prompt |
+| `GET /session/:id/messages` | Get conversation history |
+| `GET /global/event` | SSE event stream |
+| `POST /session/:id/fork` | Fork a session |
+| `GET /file` | Read/list files |
+| `GET /provider` | List providers and models |
+
+### TypeScript SDK
+
+```ts
+import { createStardrop } from "stardrop-sdk"
+
+const client = createStardrop()
+// Create sessions, send prompts, stream events — all programmatically
+```
+
+### GitHub Integration
+
+Comprehensive GitHub support (issue parsing, PR review, comment handling, diff analysis, GitHub Actions integration) for autonomous ticket-to-PR workflows.
+
+### Protocol Support
+
+- **ACP** (Agent Client Protocol) — for IDE integrations (Zed, etc.)
+- **MCP** (Model Context Protocol) — connect external tool servers
+- **LSP** (Language Server Protocol) — code intelligence and diagnostics
+
+### Skills System
+
+Custom skills defined as `SKILL.md` files in `.stardrop/skill/` or `.claude/skills/`. Drop in a markdown file describing a capability and Stardrop can use it.
+
+### CLI Commands
+
+```
+stardrop serve        # Start headless API server (port 4096)
+stardrop run          # Execute a prompt non-interactively
+stardrop github       # Handle GitHub webhook events (issues, PRs, comments)
+stardrop acp          # Start Agent Client Protocol server
+stardrop mcp          # Manage Model Context Protocol servers
+stardrop agent        # Manage agents
+stardrop models       # List available models
+stardrop auth         # Manage provider authentication
+stardrop pr           # PR management
+stardrop export       # Export a session
+stardrop stats        # Usage statistics
+```
+
+---
+
+## Architecture
+
+```
+packages/
+├── stardrop/          # Core AI agent engine
+│   ├── src/
+│   │   ├── agent/     # Agent definitions and prompts
+│   │   ├── session/   # Session lifecycle, LLM calls, message processing
+│   │   ├── tool/      # 30+ built-in tools
+│   │   ├── provider/  # 20+ LLM provider integrations
+│   │   ├── server/    # Hono HTTP API server
+│   │   ├── permission/# Fine-grained permission system
+│   │   ├── skill/     # Custom skill loading
+│   │   ├── acp/       # Agent Client Protocol
+│   │   ├── mcp/       # Model Context Protocol
+│   │   ├── lsp/       # Language Server Protocol
+│   │   ├── cli/       # CLI commands and TUI
+│   │   └── ...
+│   └── test/          # Test suite
+├── sdk/js/            # TypeScript SDK for the API
+├── app/               # Web-based UI
+├── desktop/           # Desktop application (Electron)
+├── ui/                # Shared UI components
+├── plugin/            # Editor plugins
+├── enterprise/        # Enterprise features
+└── console/           # Console/dashboard
+```
+
+---
+
+## Vision
+
+Stardrop wants to be your AI teammate — not a tool you use, but a collaborator that picks up work, does it well, and hands it back for review. The goal is:
+
+**You describe what you want. Stardrop builds it.**
+
+- Open a GitHub issue describing a feature, bug fix, or refactor
+- Stardrop reads the codebase, understands the architecture, and plans the change
+- It asks questions when something is ambiguous instead of guessing
+- It makes small, clean PRs with live previews
+- You review, iterate, and merge
+
+No prompt engineering. No copy-pasting context. Just describe the outcome and let Stardrop figure out the implementation.
+
+---
+
+## Next Steps
+
+### Near-term
+
+- **GitHub Actions workflow** — Trigger Stardrop automatically when issues are labeled or comments mention `@stardrop`, using the existing `stardrop github` command
+- **Autonomous PR creation** — After the agent completes changes, automatically create a branch and PR with a summary of what was done
+- **Preview deployments** — Integrate with Vercel/Netlify/CI to deploy previews on every PR Stardrop creates
+- **Async question loop** — When Stardrop needs clarification, post a GitHub comment and resume when the user replies
+
+### Medium-term
+
+- **Multi-repo awareness** — Let Stardrop work across multiple repositories in a single task
+- **Learning from reviews** — Use PR review feedback to improve future suggestions
+- **Custom agent personas** — Configure Stardrop's behavior per-repo (coding style, testing requirements, deployment targets)
+- **Stardrop API** — A hosted version where you can send requests via API without self-hosting
+
+### Long-term
+
+- **Proactive suggestions** — Stardrop monitors the repo and suggests improvements, catches bugs, and proposes optimizations
+- **Full CI/CD ownership** — Stardrop doesn't just write code, it deploys, monitors, and rolls back if something goes wrong
+- **Team coordination** — Multiple Stardrop agents working on different tickets in parallel, aware of each other's changes
+
+---
+
+## Tech Stack
+
+- **Runtime**: Bun
+- **Language**: TypeScript
+- **HTTP Server**: Hono (with OpenAPI)
+- **AI SDK**: Vercel AI SDK (`ai` package) + 20 provider packages
+- **Protocols**: ACP, MCP, LSP
+- **Validation**: Zod
+- **TUI**: SolidJS + OpenTUI
+- **GitHub**: Octokit (REST + GraphQL)
+
+---
+
+## Made by
+
+**Nikki Lin** and **Arihant Choudhary** at City Intelligence, Inc.
+
+Contact: stardroplin@stanford.edu
