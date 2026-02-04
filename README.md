@@ -1,12 +1,13 @@
 # Stardrop
 
-**I'm Stardrop, an AI Agent made by Nikki Lin and Arihant Choudhary that turns your software wishes into reality.**
+## How to collaborate with Stardrop
 
-Send me what you want me to build for you at: **stardroplin@stanford.edu** or add me to your GitHub repo and `npm i -g stardrop`
+1. Send me an Email: **stardroplin@stanford.edu**
+2. Add me to your GitHub Repo: **@stardrop-cli**
 
-My source code can be found here: [github.com/arihantchoudhary/opencode](https://github.com/arihantchoudhary/opencode)
+OR
 
----
+1. **npm i -g stardrop** and prompt me directly
 
 ## What is Stardrop?
 
