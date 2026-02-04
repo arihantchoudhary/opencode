@@ -26,6 +26,7 @@ import { Provider } from "../../provider/provider"
 import { Bus } from "../../bus"
 import { MessageV2 } from "../../session/message-v2"
 import { SessionPrompt } from "@/session/prompt"
+import { Question } from "../../question"
 import { $ } from "bun"
 
 type GitHubAuthor = {
@@ -542,15 +543,26 @@ export const GithubRunCommand = cmd({
         // Setup opencode session
         const repoData = await fetchRepo()
         session = await Session.create({
-          permission: [
-            {
-              permission: "question",
-              action: "deny",
-              pattern: "*",
-            },
-          ],
+          permission: isUserEvent
+            ? [
+                {
+                  permission: "question",
+                  action: "allow",
+                  pattern: "*",
+                },
+              ]
+            : [
+                {
+                  permission: "question",
+                  action: "deny",
+                  pattern: "*",
+                },
+              ],
         })
         subscribeSessionEvents()
+        if (isUserEvent && issueId) {
+          subscribeQuestionEvents()
+        }
         shareId = await (async () => {
           if (share === false) return
           if (!share && repoData.data.private) return
@@ -887,6 +899,99 @@ export const GithubRunCommand = cmd({
               return
             }
           }
+        })
+      }
+
+      function subscribeQuestionEvents() {
+        Bus.subscribe(Question.Event.Asked, async (evt) => {
+          if (evt.properties.sessionID !== session.id) return
+          const request = evt.properties
+
+          // Format questions as a GitHub comment
+          const questionsText = request.questions
+            .map((q, i) => {
+              const options = q.options.map((o) => `  - **${o.label}**: ${o.description}`).join("\n")
+              return `### ${i + 1}. ${q.question}\n${options}`
+            })
+            .join("\n\n")
+
+          const commentBody =
+            `**Stardrop needs clarification**\n\n` +
+            `${questionsText}\n\n` +
+            `---\n` +
+            `*Reply to this comment with your answers. ` +
+            `Format: one answer per line, use the option label or type a custom answer.*\n` +
+            `<!-- stardrop-question:${request.id} -->`
+
+          await octoRest.rest.issues.createComment({
+            owner,
+            repo,
+            issue_number: issueId!,
+            body: commentBody,
+          })
+
+          console.log(`Posted question to issue #${issueId}, waiting for reply...`)
+
+          // Poll for reply comments
+          const POLL_INTERVAL = 10_000 // 10 seconds
+          const MAX_WAIT = 24 * 60 * 60 * 1000 // 24 hours
+          const startTime = Date.now()
+
+          const poll = async (): Promise<void> => {
+            while (Date.now() - startTime < MAX_WAIT) {
+              await Bun.sleep(POLL_INTERVAL)
+
+              const comments = await octoRest.rest.issues.listComments({
+                owner,
+                repo,
+                issue_number: issueId!,
+                since: new Date(startTime).toISOString(),
+              })
+
+              // Find a reply after our question that isn't from the bot
+              const questionMarker = `stardrop-question:${request.id}`
+              let foundQuestion = false
+              for (const comment of comments.data) {
+                if (comment.body?.includes(questionMarker)) {
+                  foundQuestion = true
+                  continue
+                }
+                if (
+                  foundQuestion &&
+                  comment.user?.login !== AGENT_USERNAME &&
+                  comment.user?.login !== "github-actions[bot]"
+                ) {
+                  // Parse the reply — each line is an answer
+                  const lines = (comment.body || "")
+                    .split("\n")
+                    .map((l) => l.trim())
+                    .filter((l) => l.length > 0)
+
+                  const answers: Question.Answer[] = request.questions.map((q, i) => {
+                    const line = lines[i] || lines[0] || ""
+                    // Check if line matches an option label
+                    const matchedOption = q.options.find(
+                      (o) => o.label.toLowerCase() === line.toLowerCase(),
+                    )
+                    return [matchedOption ? matchedOption.label : line]
+                  })
+
+                  console.log(`Received reply from ${comment.user?.login}:`, answers)
+                  await Question.reply({ requestID: request.id, answers })
+                  return
+                }
+              }
+            }
+
+            // Timeout — reject the question
+            console.log("Question timed out after 24 hours")
+            await Question.reject(request.id)
+          }
+
+          poll().catch((e) => {
+            console.error("Error polling for question reply:", e)
+            Question.reject(request.id).catch(() => {})
+          })
         })
       }
 
