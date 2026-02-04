@@ -1,0 +1,76 @@
+name: stardrop
+
+# Stardrop AI Agent — triggered by @stardrop-cli mentions, /sd commands, or 'stardrop' label
+# Users must add their own LLM API key as a GitHub Secret (e.g. ANTHROPIC_API_KEY, OPENAI_API_KEY)
+
+on:
+  issue_comment:
+    types: [created]
+  issues:
+    types: [labeled]
+  pull_request_review_comment:
+    types: [created]
+
+jobs:
+  stardrop:
+    if: |
+      (github.event_name == 'issue_comment' && (
+        contains(github.event.comment.body, '@stardrop-cli') ||
+        contains(github.event.comment.body, '/stardrop') ||
+        contains(github.event.comment.body, ' /sd') ||
+        startsWith(github.event.comment.body, '/sd')
+      )) ||
+      (github.event_name == 'pull_request_review_comment' && (
+        contains(github.event.comment.body, '@stardrop-cli') ||
+        contains(github.event.comment.body, '/stardrop') ||
+        contains(github.event.comment.body, ' /sd') ||
+        startsWith(github.event.comment.body, '/sd')
+      )) ||
+      (github.event_name == 'issues' && github.event.action == 'labeled' && github.event.label.name == 'stardrop')
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: write
+      pull-requests: write
+      issues: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure git identity
+        run: |
+          git config user.name "Stardrop"
+          git config user.email "rosemaryrunner@icloud.com"
+
+      - name: Configure AWS credentials
+        if: env.AWS_ACCESS_KEY_ID != ''
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION || 'us-east-1' }}
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+
+      - name: Install Stardrop
+        run: npm i -g stardrop || curl -fsSL https://opencode.ai/install | bash
+
+      - name: Add to PATH
+        run: echo "$HOME/.opencode/bin" >> $GITHUB_PATH
+
+      - name: Run Stardrop agent
+        env:
+          # Users must provide their own API key in GitHub Secrets
+          # Supported: ANTHROPIC_API_KEY, OPENAI_API_KEY, GOOGLE_API_KEY, etc.
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          MODEL: ${{ secrets.STARDROP_MODEL || 'anthropic/claude-sonnet-4-20250514' }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          USE_GITHUB_TOKEN: "true"
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION || 'us-east-1' }}
+        run: stardrop github run
