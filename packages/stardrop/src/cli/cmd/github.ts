@@ -756,7 +756,7 @@ export const GithubRunCommand = cmd({
         }
 
         const reviewContext = getReviewCommentContext()
-        const mentions = (process.env["MENTIONS"] || "/opencode,/oc")
+        const mentions = (process.env["MENTIONS"] || "/stardrop,/sd,@stardrop-cli")
           .split(",")
           .map((m) => m.trim().toLowerCase())
           .filter(Boolean)
@@ -902,7 +902,7 @@ export const GithubRunCommand = cmd({
       }
 
       async function chat(message: string, files: PromptFiles = []) {
-        console.log("Sending message to opencode...")
+        console.log("Sending message to Stardrop...")
 
         const result = await SessionPrompt.prompt({
           sessionID: session.id,
@@ -1039,8 +1039,8 @@ export const GithubRunCommand = cmd({
         const newCredentials = Buffer.from(`x-access-token:${appToken}`, "utf8").toString("base64")
 
         await $`git config --local ${config} "AUTHORIZATION: basic ${newCredentials}"`
-        await $`git config --global user.name "${AGENT_USERNAME}"`
-        await $`git config --global user.email "${AGENT_USERNAME}@users.noreply.github.com"`
+        await $`git config --global user.name "Stardrop"`
+        await $`git config --global user.email "rosemaryrunner@icloud.com"`
       }
 
       async function restoreGitConfig() {
@@ -1087,9 +1087,9 @@ export const GithubRunCommand = cmd({
           .join("")
         if (type === "schedule" || type === "dispatch") {
           const hex = crypto.randomUUID().slice(0, 6)
-          return `opencode/${type}-${hex}-${timestamp}`
+          return `stardrop/${type}-${hex}-${timestamp}`
         }
-        return `opencode/${type}${issueId}-${timestamp}`
+        return `stardrop/${type}${issueId}-${timestamp}`
       }
 
       async function pushToNewBranch(summary: string, branch: string, commit: boolean, isSchedule: boolean) {
