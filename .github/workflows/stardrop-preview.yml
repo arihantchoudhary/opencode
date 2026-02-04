@@ -1,0 +1,197 @@
+name: stardrop-preview
+
+# Deploy preview environments for PRs created by Stardrop
+# Creates an AWS App Runner service per PR, tears it down on close
+
+on:
+  pull_request:
+    types: [opened, synchronize, closed]
+
+jobs:
+  deploy-preview:
+    if: |
+      github.event.pull_request.user.login == 'stardrop-cli' &&
+      (github.event.action == 'opened' || github.event.action == 'synchronize') &&
+      !github.event.pull_request.merged
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      id-token: write
+    env:
+      AWS_REGION: us-east-1
+      ECR_REPO: stardrop-preview
+      SERVICE_NAME: stardrop-preview-pr-${{ github.event.pull_request.number }}
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to ECR
+        id: ecr-login
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Ensure ECR repository exists
+        run: |
+          aws ecr describe-repositories --repository-names $ECR_REPO 2>/dev/null || \
+          aws ecr create-repository --repository-name $ECR_REPO --image-scanning-configuration scanOnPush=true
+
+      - name: Build and push Docker image
+        env:
+          ECR_REGISTRY: ${{ steps.ecr-login.outputs.registry }}
+          IMAGE_TAG: pr-${{ github.event.pull_request.number }}-${{ github.sha }}
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPO:$IMAGE_TAG -f packages/stardrop/Dockerfile .
+          docker push $ECR_REGISTRY/$ECR_REPO:$IMAGE_TAG
+          echo "IMAGE_URI=$ECR_REGISTRY/$ECR_REPO:$IMAGE_TAG" >> $GITHUB_ENV
+
+      - name: Deploy or update App Runner service
+        id: deploy
+        run: |
+          ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+          ECR_REGISTRY="${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+
+          # Check if service exists
+          SERVICE_ARN=$(aws apprunner list-services --query "ServiceSummaryList[?ServiceName=='${SERVICE_NAME}'].ServiceArn" --output text 2>/dev/null)
+
+          # Create App Runner access role if it doesn't exist
+          ROLE_NAME="stardrop-preview-ecr-access"
+          if ! aws iam get-role --role-name $ROLE_NAME 2>/dev/null; then
+            aws iam create-role --role-name $ROLE_NAME \
+              --assume-role-policy-document '{
+                "Version": "2012-10-17",
+                "Statement": [{
+                  "Effect": "Allow",
+                  "Principal": {"Service": "build.apprunner.amazonaws.com"},
+                  "Action": "sts:AssumeRole"
+                }]
+              }'
+            aws iam attach-role-policy --role-name $ROLE_NAME \
+              --policy-arn arn:aws:iam::aws:policy/service-role/AWSAppRunnerServicePolicyForECRAccess
+            sleep 10
+          fi
+          ACCESS_ROLE_ARN="arn:aws:iam::${ACCOUNT_ID}:role/${ROLE_NAME}"
+
+          if [ -z "$SERVICE_ARN" ] || [ "$SERVICE_ARN" = "None" ]; then
+            echo "Creating new App Runner service: ${SERVICE_NAME}"
+            SERVICE_ARN=$(aws apprunner create-service \
+              --service-name "${SERVICE_NAME}" \
+              --source-configuration "{
+                \"ImageRepository\": {
+                  \"ImageIdentifier\": \"${IMAGE_URI}\",
+                  \"ImageRepositoryType\": \"ECR\",
+                  \"ImageConfiguration\": {
+                    \"Port\": \"4096\"
+                  }
+                },
+                \"AutoDeploymentsEnabled\": false,
+                \"AuthenticationConfiguration\": {
+                  \"AccessRoleArn\": \"${ACCESS_ROLE_ARN}\"
+                }
+              }" \
+              --instance-configuration "{
+                \"Cpu\": \"1024\",
+                \"Memory\": \"2048\"
+              }" \
+              --query 'Service.ServiceArn' --output text)
+          else
+            echo "Updating existing App Runner service: ${SERVICE_NAME}"
+            aws apprunner update-service \
+              --service-arn "${SERVICE_ARN}" \
+              --source-configuration "{
+                \"ImageRepository\": {
+                  \"ImageIdentifier\": \"${IMAGE_URI}\",
+                  \"ImageRepositoryType\": \"ECR\",
+                  \"ImageConfiguration\": {
+                    \"Port\": \"4096\"
+                  }
+                },
+                \"AutoDeploymentsEnabled\": false,
+                \"AuthenticationConfiguration\": {
+                  \"AccessRoleArn\": \"${ACCESS_ROLE_ARN}\"
+                }
+              }"
+          fi
+
+          # Wait for service to be running
+          echo "Waiting for service to be ready..."
+          for i in $(seq 1 60); do
+            STATUS=$(aws apprunner describe-service --service-arn "${SERVICE_ARN}" --query 'Service.Status' --output text)
+            URL=$(aws apprunner describe-service --service-arn "${SERVICE_ARN}" --query 'Service.ServiceUrl' --output text)
+            if [ "$STATUS" = "RUNNING" ]; then
+              echo "Service is running at: https://${URL}"
+              echo "PREVIEW_URL=https://${URL}" >> $GITHUB_ENV
+              break
+            fi
+            echo "Status: ${STATUS}... waiting 10s"
+            sleep 10
+          done
+
+      - name: Comment preview URL on PR
+        if: env.PREVIEW_URL != ''
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const body = `**Stardrop Preview Deployed**\n\n` +
+              `Preview: ${process.env.PREVIEW_URL}\n\n` +
+              `Commit: \`${context.sha.substring(0, 7)}\`\n` +
+              `Service: \`${process.env.SERVICE_NAME}\``;
+
+            // Check for existing preview comment
+            const comments = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+            });
+            const existing = comments.data.find(c => c.body.includes('Stardrop Preview Deployed'));
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.payload.pull_request.number,
+                body,
+              });
+            }
+
+  teardown-preview:
+    if: |
+      github.event.pull_request.user.login == 'stardrop-cli' &&
+      github.event.action == 'closed'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      AWS_REGION: us-east-1
+      SERVICE_NAME: stardrop-preview-pr-${{ github.event.pull_request.number }}
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Delete App Runner service
+        run: |
+          SERVICE_ARN=$(aws apprunner list-services --query "ServiceSummaryList[?ServiceName=='${SERVICE_NAME}'].ServiceArn" --output text 2>/dev/null)
+          if [ -n "$SERVICE_ARN" ] && [ "$SERVICE_ARN" != "None" ]; then
+            echo "Deleting preview service: ${SERVICE_NAME}"
+            aws apprunner delete-service --service-arn "${SERVICE_ARN}"
+            echo "Preview service deleted"
+          else
+            echo "No preview service found for: ${SERVICE_NAME}"
+          fi
