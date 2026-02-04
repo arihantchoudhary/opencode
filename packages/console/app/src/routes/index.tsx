@@ -43,7 +43,7 @@ export default function Home() {
   return (
     <main data-page="opencode">
       {/*<HttpHeader name="Cache-Control" value="public, max-age=1, s-maxage=3600, stale-while-revalidate=86400" />*/}
-      <Title>OpenCode | The open source AI coding agent</Title>
+      <Title>Stardrop | AI agent that turns tickets into deployed code</Title>
       <Link rel="canonical" href={config.baseUrl} />
       <Meta property="og:image" content="/social-share.png" />
       <Meta name="twitter:image" content="/social-share.png" />
@@ -73,10 +73,10 @@ export default function Home() {
               {/*   target="_blank">*/}
               {/*  What’s new in {release()?.name ?? "the latest release"}*/}
               {/*</a>*/}
-              <h1>The open source AI coding agent</h1>
+              <h1>AI agent that turns tickets into deployed code</h1>
               <p>
-                Free models included or connect any model from any provider, <span data-slot="br"></span>including
-                Claude, GPT, Gemini and more.
+                Describe what you want. Stardrop reads your codebase, asks clarifying questions,
+                <span data-slot="br"></span>and ships small, reviewable changes to a live preview.
               </p>
             </div>
             <div data-slot="installation">
@@ -728,11 +728,10 @@ export default function Home() {
 
           <section data-component="zen-cta">
             <div data-slot="zen-cta-copy">
-              <strong>Access reliable optimized models for coding agents</strong>
+              <strong>How Stardrop works</strong>
               <p>
-                Zen gives you access to a handpicked set of AI models that OpenCode has tested and benchmarked
-                specifically for coding agents. No need to worry about inconsistent performance and quality across
-                providers, use validated models that work.
+                Open a ticket describing what you want. Stardrop reads the codebase, asks clarifying questions,
+                makes small reviewable changes, and ships a live preview. You review, iterate, and merge.
               </p>
               <div data-slot="model-logos">
                 <div>
@@ -815,8 +814,8 @@ export default function Home() {
                   </svg>
                 </div>
               </div>
-              <A href="/zen">
-                <span>Learn about Zen </span>
+              <A href="/black">
+                <span>View pricing </span>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path
                     d="M6.5 12L17 12M13 16.5L17.5 12L13 7.5"
