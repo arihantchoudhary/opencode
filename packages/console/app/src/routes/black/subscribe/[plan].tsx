@@ -6,14 +6,14 @@ import { Elements, PaymentElement, useStripe, useElements, AddressElement } from
 import { PlanID, plans } from "../common"
 import { getActor, useAuthSession } from "~/context/auth"
 import { withActor } from "~/context/auth.withActor"
-import { Actor } from "@opencode-ai/console-core/actor.js"
-import { and, Database, eq, isNull } from "@opencode-ai/console-core/drizzle/index.js"
-import { WorkspaceTable } from "@opencode-ai/console-core/schema/workspace.sql.js"
-import { UserTable } from "@opencode-ai/console-core/schema/user.sql.js"
+import { Actor } from "stardrop-console-core/actor.js"
+import { and, Database, eq, isNull } from "stardrop-console-core/drizzle/index.js"
+import { WorkspaceTable } from "stardrop-console-core/schema/workspace.sql.js"
+import { UserTable } from "stardrop-console-core/schema/user.sql.js"
 import { createList } from "solid-list"
 import { Modal } from "~/component/modal"
-import { BillingTable } from "@opencode-ai/console-core/schema/billing.sql.js"
-import { Billing } from "@opencode-ai/console-core/billing.js"
+import { BillingTable } from "stardrop-console-core/schema/billing.sql.js"
+import { Billing } from "stardrop-console-core/billing.js"
 
 const plansMap = Object.fromEntries(plans.map((p) => [p.id, p])) as Record<PlanID, (typeof plans)[number]>
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY!)
@@ -56,7 +56,7 @@ const createSetupIntent = async (input: { plan: string; workspaceID: string }) =
   "use server"
   const { plan, workspaceID } = input
 
-  if (!plan || !["20", "100", "200"].includes(plan)) return { error: "Invalid plan" }
+  if (!plan || !["0", "14", "29"].includes(plan)) return { error: "Invalid plan" }
   if (!workspaceID) return { error: "Workspace ID is required" }
 
   return withActor(async () => {
@@ -152,11 +152,11 @@ function Failure(props: { message: string }) {
 function Success(props: SuccessData) {
   return (
     <div data-slot="success">
-      <p data-slot="title">You're on the OpenCode Black waitlist</p>
+      <p data-slot="title">You're on the Stardrop waitlist</p>
       <dl data-slot="details">
         <div>
           <dt>Subscription plan</dt>
-          <dd>OpenCode Black {props.plan}</dd>
+          <dd>Stardrop {props.plan}</dd>
         </div>
         <div>
           <dt>Amount</dt>
@@ -338,7 +338,7 @@ export default function BlackSubscribe() {
 
   return (
     <>
-      <Title>Subscribe to OpenCode Black</Title>
+      <Title>Subscribe to Stardrop</Title>
       <section data-slot="subscribe-form">
         <div data-slot="form-card">
           <Switch>
@@ -347,12 +347,9 @@ export default function BlackSubscribe() {
             <Match when={true}>
               <>
                 <div data-slot="plan-header">
-                  <p data-slot="title">Subscribe to OpenCode Black</p>
+                  <p data-slot="title">Subscribe to Stardrop {planData.name}</p>
                   <p data-slot="price">
                     <span data-slot="amount">${planData.id}</span> <span data-slot="period">per month</span>
-                    <Show when={planData.multiplier}>
-                      <span data-slot="multiplier">{planData.multiplier}</span>
-                    </Show>
                   </p>
                 </div>
                 <div data-slot="divider" />
