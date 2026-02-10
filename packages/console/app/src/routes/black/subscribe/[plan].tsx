@@ -56,7 +56,7 @@ const createSetupIntent = async (input: { plan: string; workspaceID: string }) =
   "use server"
   const { plan, workspaceID } = input
 
-  if (!plan || !["0", "14", "29"].includes(plan)) return { error: "Invalid plan" }
+  if (!plan || !["0", "14", "29", "enterprise"].includes(plan)) return { error: "Invalid plan" }
   if (!workspaceID) return { error: "Workspace ID is required" }
 
   return withActor(async () => {
@@ -257,7 +257,7 @@ function IntentForm(props: { plan: PlanID; workspaceID: string; onSuccess: (data
 
 export default function BlackSubscribe() {
   const params = useParams()
-  const planData = plansMap[(params.plan as PlanID) ?? "20"] ?? plansMap["20"]
+  const planData = plansMap[(params.plan as PlanID) ?? "14"] ?? plansMap["14"]
   const plan = planData.id
 
   const workspaces = createAsync(() => getWorkspaces(plan))

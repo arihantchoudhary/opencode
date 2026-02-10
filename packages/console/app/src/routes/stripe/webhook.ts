@@ -184,7 +184,7 @@ export async function POST(input: APIEvent) {
                 status: "subscribed",
                 coupon: couponID,
                 seats: 1,
-                plan: "200",
+                plan: "29",
               },
               paymentMethodID: paymentMethod.id,
               paymentMethodLast4: paymentMethod.card?.last4 ?? null,

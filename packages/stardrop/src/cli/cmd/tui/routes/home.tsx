@@ -74,7 +74,7 @@ export function Home() {
     </Show>
   )
 
-  let prompt: PromptRef
+  let prompt!: PromptRef
   const args = useArgs()
   onMount(() => {
     if (once) return
@@ -97,13 +97,13 @@ export function Home() {
         <box height={3} />
         <Logo />
         <box paddingTop={2} maxWidth={75}>
-          <text fg={theme.textMuted} wrap="wrap" align="center">
+          <text fg={theme.textMuted}>
             Stardrop turns tickets into deployed code by acting as an AI teammate that reads your codebase, asks
             clarifying questions, and ships reviewable changes to a live preview
           </text>
         </box>
         <box paddingTop={3} maxWidth={75} alignItems="center">
-          <text fg={theme.text} align="center">
+          <text fg={theme.text}>
             Email <span style={{ fg: theme.primary }}>stardroplin@stanford.edu</span> for access
           </text>
         </box>

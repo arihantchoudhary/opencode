@@ -8,7 +8,7 @@ import { AuthTable } from "../src/schema/auth.sql.js"
 import { BlackData } from "../src/black.js"
 import { Actor } from "../src/actor.js"
 
-const plan = "200"
+const plan = "29" as const
 const couponID = "JAIr0Pe1"
 const workspaceID = process.argv[2]
 const seats = parseInt(process.argv[3])

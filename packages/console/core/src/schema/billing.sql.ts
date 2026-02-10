@@ -2,7 +2,7 @@ import { bigint, boolean, index, int, json, mysqlEnum, mysqlTable, uniqueIndex, 
 import { timestamps, ulid, utc, workspaceColumns } from "../drizzle/types"
 import { workspaceIndexes } from "./workspace.sql"
 
-export const SubscriptionPlan = ["20", "100", "200"] as const
+export const SubscriptionPlan = ["0", "14", "29", "enterprise"] as const
 export const BillingTable = mysqlTable(
   "billing",
   {
@@ -25,7 +25,7 @@ export const BillingTable = mysqlTable(
     subscription: json("subscription").$type<{
       status: "subscribed"
       seats: number
-      plan: "20" | "100" | "200"
+      plan: "0" | "14" | "29" | "enterprise"
       useBalance?: boolean
       coupon?: string
     }>(),

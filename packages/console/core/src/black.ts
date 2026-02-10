@@ -7,17 +7,22 @@ import { SubscriptionPlan } from "./schema/billing.sql"
 
 export namespace BlackData {
   const Schema = z.object({
-    "200": z.object({
+    "0": z.object({
       fixedLimit: z.number().int(),
       rollingLimit: z.number().int(),
       rollingWindow: z.number().int(),
     }),
-    "100": z.object({
+    "14": z.object({
       fixedLimit: z.number().int(),
       rollingLimit: z.number().int(),
       rollingWindow: z.number().int(),
     }),
-    "20": z.object({
+    "29": z.object({
+      fixedLimit: z.number().int(),
+      rollingLimit: z.number().int(),
+      rollingWindow: z.number().int(),
+    }),
+    enterprise: z.object({
       fixedLimit: z.number().int(),
       rollingLimit: z.number().int(),
       rollingWindow: z.number().int(),
@@ -43,8 +48,8 @@ export namespace BlackData {
       plan: z.enum(SubscriptionPlan),
     }),
     ({ plan }) => {
-      if (plan === "200") return Resource.ZEN_BLACK_PRICE.plan200
-      if (plan === "100") return Resource.ZEN_BLACK_PRICE.plan100
+      if (plan === "29") return Resource.ZEN_BLACK_PRICE.plan200
+      if (plan === "14") return Resource.ZEN_BLACK_PRICE.plan100
       return Resource.ZEN_BLACK_PRICE.plan20
     },
   )
@@ -54,9 +59,9 @@ export namespace BlackData {
       priceID: z.string(),
     }),
     ({ priceID }) => {
-      if (priceID === Resource.ZEN_BLACK_PRICE.plan200) return "200"
-      if (priceID === Resource.ZEN_BLACK_PRICE.plan100) return "100"
-      return "20"
+      if (priceID === Resource.ZEN_BLACK_PRICE.plan200) return "29"
+      if (priceID === Resource.ZEN_BLACK_PRICE.plan100) return "14"
+      return "0"
     },
   )
 }
