@@ -1,7 +1,7 @@
-import { createOpencodeClient, createOpencodeServer } from "@opencode-ai/sdk"
+import { createStardropClient, createStardropServer } from "stardrop-sdk"
 
-const server = await createOpencodeServer()
-const client = createOpencodeClient({ baseUrl: server.url })
+const server = await createStardropServer()
+const client = createStardropClient({ baseUrl: server.url })
 
 const input = await Array.fromAsync(new Bun.Glob("packages/core/*.ts").scan())
 

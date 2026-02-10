@@ -1,9 +1,9 @@
 import type { APIEvent } from "@solidjs/start/server"
-import { and, Database, eq, isNull } from "@opencode-ai/console-core/drizzle/index.js"
-import { KeyTable } from "@opencode-ai/console-core/schema/key.sql.js"
-import { WorkspaceTable } from "@opencode-ai/console-core/schema/workspace.sql.js"
-import { ModelTable } from "@opencode-ai/console-core/schema/model.sql.js"
-import { ZenData } from "@opencode-ai/console-core/model.js"
+import { and, Database, eq, isNull } from "stardrop-console-core/drizzle/index.js"
+import { KeyTable } from "stardrop-console-core/schema/key.sql.js"
+import { WorkspaceTable } from "stardrop-console-core/schema/workspace.sql.js"
+import { ModelTable } from "stardrop-console-core/schema/model.sql.js"
+import { ZenData } from "stardrop-console-core/model.js"
 
 export async function OPTIONS(input: APIEvent) {
   return new Response(null, {

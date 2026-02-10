@@ -2,10 +2,10 @@ export * from "./gen/types.gen.js"
 
 import { createClient } from "./gen/client/client.gen.js"
 import { type Config } from "./gen/client/types.gen.js"
-import { OpencodeClient } from "./gen/sdk.gen.js"
-export { type Config as OpencodeClientConfig, OpencodeClient }
+import { StardropClient } from "./gen/sdk.gen.js"
+export { type Config as StardropClientConfig, StardropClient }
 
-export function createOpencodeClient(config?: Config & { directory?: string }) {
+export function createStardropClient(config?: Config & { directory?: string }) {
   if (!config?.fetch) {
     const customFetch: any = (req: any) => {
       // @ts-ignore
@@ -23,10 +23,10 @@ export function createOpencodeClient(config?: Config & { directory?: string }) {
     const encodedDirectory = isNonASCII ? encodeURIComponent(config.directory) : config.directory
     config.headers = {
       ...config.headers,
-      "x-opencode-directory": encodedDirectory,
+      "x-stardrop-directory": encodedDirectory,
     }
   }
 
   const client = createClient(config)
-  return new OpencodeClient({ client })
+  return new StardropClient({ client })
 }

@@ -4,9 +4,9 @@ import { useSDK } from "@/context/sdk"
 import { monoFontFamily, useSettings } from "@/context/settings"
 import { SerializeAddon } from "@/addons/serialize"
 import { LocalPTY } from "@/context/terminal"
-import { resolveThemeVariant, useTheme, withAlpha, type HexColor } from "@opencode-ai/ui/theme"
+import { resolveThemeVariant, useTheme, withAlpha, type HexColor } from "stardrop-ui/theme"
 import { useLanguage } from "@/context/language"
-import { showToast } from "@opencode-ai/ui/toast"
+import { showToast } from "stardrop-ui/toast"
 
 export interface TerminalProps extends ComponentProps<"div"> {
   pty: LocalPTY

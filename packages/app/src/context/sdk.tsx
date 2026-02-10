@@ -1,5 +1,5 @@
-import { createOpencodeClient, type Event } from "@opencode-ai/sdk/v2/client"
-import { createSimpleContext } from "@opencode-ai/ui/context"
+import { createStardropClient, type Event } from "stardrop-sdk/v2/client"
+import { createSimpleContext } from "stardrop-ui/context"
 import { createGlobalEmitter } from "@solid-primitives/event-bus"
 import { createEffect, createMemo, onCleanup } from "solid-js"
 import { useGlobalSDK } from "./global-sdk"
@@ -13,7 +13,7 @@ export const { use: useSDK, provider: SDKProvider } = createSimpleContext({
 
     const directory = createMemo(() => props.directory)
     const client = createMemo(() =>
-      createOpencodeClient({
+      createStardropClient({
         baseUrl: globalSDK.url,
         fetch: platform.fetch,
         directory: directory(),

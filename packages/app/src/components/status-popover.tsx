@@ -1,27 +1,27 @@
 import { createEffect, createMemo, createSignal, For, onCleanup, onMount, Show } from "solid-js"
 import { createStore, reconcile } from "solid-js/store"
 import { useNavigate } from "@solidjs/router"
-import { useDialog } from "@opencode-ai/ui/context/dialog"
-import { Popover } from "@opencode-ai/ui/popover"
-import { Tabs } from "@opencode-ai/ui/tabs"
-import { Button } from "@opencode-ai/ui/button"
-import { Switch } from "@opencode-ai/ui/switch"
-import { Icon } from "@opencode-ai/ui/icon"
-import { Tooltip } from "@opencode-ai/ui/tooltip"
+import { useDialog } from "stardrop-ui/context/dialog"
+import { Popover } from "stardrop-ui/popover"
+import { Tabs } from "stardrop-ui/tabs"
+import { Button } from "stardrop-ui/button"
+import { Switch } from "stardrop-ui/switch"
+import { Icon } from "stardrop-ui/icon"
+import { Tooltip } from "stardrop-ui/tooltip"
 import { useSync } from "@/context/sync"
 import { useSDK } from "@/context/sdk"
 import { normalizeServerUrl, serverDisplayName, useServer } from "@/context/server"
 import { usePlatform } from "@/context/platform"
 import { useLanguage } from "@/context/language"
-import { createOpencodeClient } from "@opencode-ai/sdk/v2/client"
+import { createStardropClient } from "stardrop-sdk/v2/client"
 import { DialogSelectServer } from "./dialog-select-server"
-import { showToast } from "@opencode-ai/ui/toast"
+import { showToast } from "stardrop-ui/toast"
 
 type ServerStatus = { healthy: boolean; version?: string }
 
 async function checkHealth(url: string, platform: ReturnType<typeof usePlatform>): Promise<ServerStatus> {
   const signal = (AbortSignal as unknown as { timeout?: (ms: number) => AbortSignal }).timeout?.(3000)
-  const sdk = createOpencodeClient({
+  const sdk = createStardropClient({
     baseUrl: url,
     fetch: platform.fetch,
     signal,

@@ -1,5 +1,5 @@
-import { createOpencodeClient } from "@opencode-ai/sdk/v2/client"
-import { createSimpleContext } from "@opencode-ai/ui/context"
+import { createStardropClient } from "stardrop-sdk/v2/client"
+import { createSimpleContext } from "stardrop-ui/context"
 import { batch, createEffect, createMemo, onCleanup } from "solid-js"
 import { createStore } from "solid-js/store"
 import { usePlatform } from "@/context/platform"
@@ -96,7 +96,7 @@ export const { use: useServer, provider: ServerProvider } = createSimpleContext(
 
     const check = (url: string) => {
       const signal = (AbortSignal as unknown as { timeout?: (ms: number) => AbortSignal }).timeout?.(3000)
-      const sdk = createOpencodeClient({
+      const sdk = createStardropClient({
         baseUrl: url,
         fetch: platform.fetch,
         signal,
