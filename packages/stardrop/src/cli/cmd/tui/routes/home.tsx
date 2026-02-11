@@ -1,7 +1,9 @@
 import { Prompt, type PromptRef } from "@tui/component/prompt"
 import { createMemo, Match, onMount, Show, Switch } from "solid-js"
+import { useKeyboard } from "@opentui/solid"
 import { useTheme } from "@tui/context/theme"
 import { useKeybind } from "@tui/context/keybind"
+import { useExit } from "../context/exit"
 import { Logo } from "../component/logo"
 import { Tips } from "../component/tips"
 import { Locale } from "@/util/locale"
@@ -90,6 +92,13 @@ export function Home() {
   const directory = useDirectory()
 
   const keybind = useKeybind()
+  const exit = useExit()
+
+  useKeyboard((evt) => {
+    if (keybind.match("app_exit", evt)) {
+      exit()
+    }
+  })
 
   return (
     <>
