@@ -30,8 +30,8 @@ permissions:
 
 jobs:
   publish:
-    runs-on: blacksmith-4vcpu-ubuntu-2404
-    if: github.repository == 'anomalyco/opencode'
+    runs-on: ubuntu-latest
+    if: github.repository == 'arihantchoudhary/stardrop'
     steps:
       - uses: actions/checkout@v3
         with:
@@ -41,11 +41,8 @@ jobs:
 
       - uses: ./.github/actions/setup-bun
 
-      - name: Install OpenCode
-        if: inputs.bump || inputs.version
-        run: bun i -g opencode-ai@1.0.169
-
       - name: Login to GitHub Container Registry
+        if: secrets.GITHUB_TOKEN != ''
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
@@ -65,9 +62,9 @@ jobs:
 
       - name: Setup Git Identity
         run: |
-          git config --global user.email "opencode@sst.dev"
-          git config --global user.name "opencode"
-          git remote set-url origin https://x-access-token:${{ secrets.SST_GITHUB_TOKEN }}@github.com/${{ github.repository }}
+          git config --global user.email "stardrop@stardrop.dev"
+          git config --global user.name "stardrop"
+          git remote set-url origin https://x-access-token:${{ secrets.SST_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
 
       - name: Publish
         id: publish
@@ -77,13 +74,15 @@ jobs:
           OPENCODE_VERSION: ${{ inputs.version }}
           OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
           AUR_KEY: ${{ secrets.AUR_KEY }}
-          GITHUB_TOKEN: ${{ secrets.SST_GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.SST_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: false
 
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
-          name: opencode-cli
-          path: packages/opencode/dist
+          name: stardrop-cli
+          path: packages/stardrop/dist
 
     outputs:
       release: ${{ steps.publish.outputs.release }}
@@ -92,7 +91,8 @@ jobs:
 
   publish-tauri:
     needs: publish
-    continue-on-error: false
+    if: needs.publish.outputs.tag && vars.ENABLE_TAURI == 'true'
+    continue-on-error: true
     strategy:
       fail-fast: false
       matrix:
@@ -101,11 +101,9 @@ jobs:
             target: x86_64-apple-darwin
           - host: macos-latest
             target: aarch64-apple-darwin
-          - host: blacksmith-4vcpu-windows-2025
-            target: x86_64-pc-windows-msvc
-          - host: blacksmith-4vcpu-ubuntu-2404
+          - host: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-          - host: blacksmith-4vcpu-ubuntu-2404-arm
+          - host: ubuntu-latest
             target: aarch64-unknown-linux-gnu
     runs-on: ${{ matrix.settings.host }}
     steps:
@@ -115,14 +113,14 @@ jobs:
           ref: ${{ needs.publish.outputs.tag }}
 
       - uses: apple-actions/import-codesign-certs@v2
-        if: ${{ runner.os == 'macOS' }}
+        if: ${{ runner.os == 'macOS' && secrets.APPLE_CERTIFICATE != '' }}
         with:
           keychain: build
           p12-file-base64: ${{ secrets.APPLE_CERTIFICATE }}
           p12-password: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
 
       - name: Verify Certificate
-        if: ${{ runner.os == 'macOS' }}
+        if: ${{ runner.os == 'macOS' && secrets.APPLE_CERTIFICATE != '' }}
         run: |
           CERT_INFO=$(security find-identity -v -p codesigning build.keychain | grep "Developer ID Application")
           CERT_ID=$(echo "$CERT_INFO" | awk -F'"' '{print $2}')
@@ -130,7 +128,7 @@ jobs:
           echo "Certificate imported."
 
       - name: Setup Apple API Key
-        if: ${{ runner.os == 'macOS' }}
+        if: ${{ runner.os == 'macOS' && secrets.APPLE_API_KEY_PATH != '' }}
         run: |
           echo "${{ secrets.APPLE_API_KEY_PATH }}" > $RUNNER_TEMP/apple-api-key.p8
 
@@ -161,20 +159,12 @@ jobs:
         env:
           OPENCODE_VERSION: ${{ needs.publish.outputs.version }}
           NPM_CONFIG_TOKEN: ${{ secrets.NPM_TOKEN }}
-          GITHUB_TOKEN: ${{ secrets.SST_GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.SST_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
           AUR_KEY: ${{ secrets.AUR_KEY }}
           OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
           RUST_TARGET: ${{ matrix.settings.target }}
           GH_TOKEN: ${{ github.token }}
           GITHUB_RUN_ID: ${{ github.run_id }}
-
-      # Fixes AppImage build issues, can be removed when https://github.com/tauri-apps/tauri/pull/12491 is released
-      - name: Install tauri-cli from portable appimage branch
-        if: contains(matrix.settings.host, 'ubuntu')
-        run: |
-          cargo install tauri-cli --git https://github.com/tauri-apps/tauri --branch feat/truly-portable-appimage --force
-          echo "Installed tauri-cli version:"
-          cargo tauri --version
 
       - name: Build and upload artifacts
         uses: Wandalen/wretry.action@v3
@@ -191,7 +181,7 @@ jobs:
             updaterJsonPreferNsis: true
             releaseId: ${{ needs.publish.outputs.release }}
             tagName: ${{ needs.publish.outputs.tag }}
-            releaseAssetNamePattern: opencode-desktop-[platform]-[arch][ext]
+            releaseAssetNamePattern: stardrop-desktop-[platform]-[arch][ext]
             releaseDraft: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -209,8 +199,8 @@ jobs:
     needs:
       - publish
       - publish-tauri
-    if: needs.publish.outputs.tag
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    if: needs.publish.outputs.tag && always()
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
         with:
@@ -220,18 +210,19 @@ jobs:
       - uses: ./.github/actions/setup-bun
 
       - name: Setup SSH for AUR
+        if: secrets.AUR_KEY != ''
         run: |
           sudo apt-get update
           sudo apt-get install -y pacman-package-manager
           mkdir -p ~/.ssh
           echo "${{ secrets.AUR_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          git config --global user.email "opencode@sst.dev"
-          git config --global user.name "opencode"
+          git config --global user.email "stardrop@stardrop.dev"
+          git config --global user.name "stardrop"
           ssh-keyscan -H aur.archlinux.org >> ~/.ssh/known_hosts || true
 
       - run: ./script/publish-complete.ts
         env:
           OPENCODE_VERSION: ${{ needs.publish.outputs.version  }}
           AUR_KEY: ${{ secrets.AUR_KEY }}
-          GITHUB_TOKEN: ${{ secrets.SST_GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.SST_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}

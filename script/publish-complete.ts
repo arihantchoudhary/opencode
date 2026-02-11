@@ -9,6 +9,6 @@ if (!Script.preview) {
 
 await $`bun install`
 
-await $`gh release download --pattern "opencode-linux-*64.tar.gz" --pattern "opencode-darwin-*64.zip" -D dist`
+await $`gh release download --pattern "stardrop-linux-*64.tar.gz" --pattern "stardrop-darwin-*64.zip" -D dist`
 
-await import(`../packages/opencode/script/publish-registries.ts`)
+await import(`../packages/stardrop/script/publish-registries.ts`)
