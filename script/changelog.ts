@@ -222,27 +222,35 @@ export async function buildNotes(from: string, to: string) {
 
   console.log("generating changelog since " + from)
 
-  const opencode = await createStardrop({ port: 5044 })
   const notes: string[] = []
 
   try {
-    const lines = await generateChangelog(commits, opencode)
-    notes.push(...lines)
-    console.log("---- Generated Changelog ----")
-    console.log(notes.join("\n"))
-    console.log("-----------------------------")
-  } catch (error) {
-    if (error instanceof Error && error.name === "TimeoutError") {
-      console.log("Changelog generation timed out, using raw commits")
-      for (const commit of commits) {
-        const attribution = commit.author && !team.includes(commit.author) ? ` (@${commit.author})` : ""
-        notes.push(`- ${commit.message}${attribution}`)
+    const opencode = await createStardrop({ port: 5044 })
+    try {
+      const lines = await generateChangelog(commits, opencode)
+      notes.push(...lines)
+      console.log("---- Generated Changelog ----")
+      console.log(notes.join("\n"))
+      console.log("-----------------------------")
+    } catch (error) {
+      if (error instanceof Error && error.name === "TimeoutError") {
+        console.log("Changelog generation timed out, using raw commits")
+        for (const commit of commits) {
+          const attribution = commit.author && !team.includes(commit.author) ? ` (@${commit.author})` : ""
+          notes.push(`- ${commit.message}${attribution}`)
+        }
+      } else {
+        throw error
       }
-    } else {
-      throw error
+    } finally {
+      opencode.server.close()
     }
-  } finally {
-    opencode.server.close()
+  } catch (error) {
+    console.log("Could not start stardrop server for changelog, using raw commits:", error instanceof Error ? error.message : error)
+    for (const commit of commits) {
+      const attribution = commit.author && !team.includes(commit.author) ? ` (@${commit.author})` : ""
+      notes.push(`- ${commit.message}${attribution}`)
+    }
   }
 
   const contributors = await getContributors(from, to)
