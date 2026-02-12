@@ -75,11 +75,6 @@ const cli = yargs(hideBin(process.argv))
       version: Installation.VERSION,
       args: process.argv.slice(2),
     })
-
-    if (!(await Registration.isRegistered())) {
-      const { promptRegistration } = await import("./registration/prompt")
-      await promptRegistration()
-    }
   })
   .usage("\n" + UI.logo())
   .completion("completion", "generate shell completion script")
@@ -116,6 +111,13 @@ const cli = yargs(hideBin(process.argv))
     process.exit(1)
   })
   .strict()
+
+const args = hideBin(process.argv)
+const isInfoFlag = args.includes("--version") || args.includes("-v") || args.includes("--help") || args.includes("-h")
+if (!isInfoFlag && !(await Registration.isRegistered())) {
+  const { promptRegistration } = await import("./registration/prompt")
+  await promptRegistration()
+}
 
 try {
   await cli.parse()
