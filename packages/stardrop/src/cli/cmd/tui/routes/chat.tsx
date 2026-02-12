@@ -106,20 +106,33 @@ export function Chat() {
       <box flexGrow={1} justifyContent="center" alignItems="center" paddingLeft={2} paddingRight={2} gap={1}>
         <box height={3} />
         <Logo />
-        <box width="100%" maxWidth={75} zIndex={1000} paddingTop={1}>
-          <Prompt
-            ref={(r) => {
-              prompt = r
-              promptRef.set(r)
-            }}
-            hint={Hint}
-          />
-        </box>
-        <box height={3} width="100%" maxWidth={75} alignItems="center" paddingTop={2}>
-          <Show when={showTips()}>
-            <Tips />
-          </Show>
-        </box>
+        <Show
+          when={sync.data.vcs?.branch}
+          fallback={
+            <box paddingTop={3} maxWidth={75} alignItems="center" gap={1}>
+              <text fg={theme.error}>No GitHub repository detected</text>
+              <text fg={theme.textMuted}>
+                Stardrop requires a git repo to commit and push changes. Run{" "}
+                <span style={{ fg: theme.text }}>git init</span> to get started.
+              </text>
+            </box>
+          }
+        >
+          <box width="100%" maxWidth={75} zIndex={1000} paddingTop={1}>
+            <Prompt
+              ref={(r) => {
+                prompt = r
+                promptRef.set(r)
+              }}
+              hint={Hint}
+            />
+          </box>
+          <box height={3} width="100%" maxWidth={75} alignItems="center" paddingTop={2}>
+            <Show when={showTips()}>
+              <Tips />
+            </Show>
+          </box>
+        </Show>
         <box height={3} />
         <Toast />
       </box>
