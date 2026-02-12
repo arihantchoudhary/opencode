@@ -21,6 +21,7 @@ import { DialogSessionList } from "@tui/component/dialog-session-list"
 import { KeybindProvider } from "@tui/context/keybind"
 import { ThemeProvider, useTheme } from "@tui/context/theme"
 import { Home } from "@tui/routes/home"
+import { Chat } from "@tui/routes/chat"
 import { Session } from "@tui/routes/session"
 import { PromptHistoryProvider } from "./component/prompt/history"
 import { FrecencyProvider } from "./component/prompt/frecency"
@@ -215,7 +216,7 @@ function App() {
   createEffect(() => {
     if (!terminalTitleEnabled() || Flag.STARDROP_DISABLE_TERMINAL_TITLE) return
 
-    if (route.data.type === "home") {
+    if (route.data.type === "home" || route.data.type === "chat") {
       renderer.setTerminalTitle("OpenCode")
       return
     }
@@ -252,6 +253,8 @@ function App() {
           type: "session",
           sessionID: args.sessionID,
         })
+      } else if (args.prompt) {
+        route.navigate({ type: "chat" })
       }
     })
   })
@@ -311,7 +314,7 @@ function App() {
         // Don't require focus - if there's any text, preserve it
         const currentPrompt = current?.current?.input ? current.current : undefined
         route.navigate({
-          type: "home",
+          type: "chat",
           initialPrompt: currentPrompt,
         })
         dialog.clear()
@@ -618,7 +621,7 @@ function App() {
 
   sdk.event.on(SessionApi.Event.Deleted.type, (evt) => {
     if (route.data.type === "session" && route.data.sessionID === evt.properties.info.id) {
-      route.navigate({ type: "home" })
+      route.navigate({ type: "chat" })
       toast.show({
         variant: "info",
         message: "The current session was deleted",
@@ -679,6 +682,9 @@ function App() {
       <Switch>
         <Match when={route.data.type === "home"}>
           <Home />
+        </Match>
+        <Match when={route.data.type === "chat"}>
+          <Chat />
         </Match>
         <Match when={route.data.type === "session"}>
           <Session />

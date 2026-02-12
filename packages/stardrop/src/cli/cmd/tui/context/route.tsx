@@ -4,6 +4,10 @@ import type { PromptInfo } from "../component/prompt/history"
 
 export type HomeRoute = {
   type: "home"
+}
+
+export type ChatRoute = {
+  type: "chat"
   initialPrompt?: PromptInfo
 }
 
@@ -13,7 +17,7 @@ export type SessionRoute = {
   initialPrompt?: PromptInfo
 }
 
-export type Route = HomeRoute | SessionRoute
+export type Route = HomeRoute | ChatRoute | SessionRoute
 
 export const { use: useRoute, provider: RouteProvider } = createSimpleContext({
   name: "Route",

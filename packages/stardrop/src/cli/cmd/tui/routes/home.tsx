@@ -1,32 +1,24 @@
-import { Prompt, type PromptRef } from "@tui/component/prompt"
-import { createMemo, Match, onMount, Show, Switch } from "solid-js"
+import { createMemo, Match, Show, Switch } from "solid-js"
 import { useKeyboard } from "@opentui/solid"
 import { useTheme } from "@tui/context/theme"
 import { useKeybind } from "@tui/context/keybind"
 import { useExit } from "../context/exit"
 import { Logo } from "../component/logo"
-import { Tips } from "../component/tips"
-import { Locale } from "@/util/locale"
 import { useSync } from "../context/sync"
 import { Toast } from "../ui/toast"
-import { useArgs } from "../context/args"
 import { useDirectory } from "../context/directory"
-import { useRouteData } from "@tui/context/route"
-import { usePromptRef } from "../context/prompt"
 import { Installation } from "@/installation"
-import { useKV } from "../context/kv"
-import { useCommandDialog } from "../component/dialog-command"
-
-// TODO: what is the best way to do this?
-let once = false
+import { DialogProvider as DialogProviderList } from "@tui/component/dialog-provider"
+import { useDialog } from "../ui/dialog"
+import { useConnected } from "../component/dialog-model"
+import { useRoute } from "@tui/context/route"
 
 export function Home() {
-  const sync = useSync()
-  const kv = useKV()
   const { theme } = useTheme()
-  const route = useRouteData("home")
-  const promptRef = usePromptRef()
-  const command = useCommandDialog()
+  const dialog = useDialog()
+  const connected = useConnected()
+  const route = useRoute()
+  const sync = useSync()
   const mcp = createMemo(() => Object.keys(sync.data.mcp).length > 0)
   const mcpError = createMemo(() => {
     return Object.values(sync.data.mcp).some((x) => x.status === "failed")
@@ -36,59 +28,6 @@ export function Home() {
     return Object.values(sync.data.mcp).filter((x) => x.status === "connected").length
   })
 
-  const isFirstTimeUser = createMemo(() => sync.data.session.length === 0)
-  const tipsHidden = createMemo(() => kv.get("tips_hidden", false))
-  const showTips = createMemo(() => {
-    // Don't show tips for first-time users
-    if (isFirstTimeUser()) return false
-    return !tipsHidden()
-  })
-
-  command.register(() => [
-    {
-      title: tipsHidden() ? "Show tips" : "Hide tips",
-      value: "tips.toggle",
-      keybind: "tips_toggle",
-      category: "System",
-      onSelect: (dialog) => {
-        kv.set("tips_hidden", !tipsHidden())
-        dialog.clear()
-      },
-    },
-  ])
-
-  const Hint = (
-    <Show when={connectedMcpCount() > 0}>
-      <box flexShrink={0} flexDirection="row" gap={1}>
-        <text fg={theme.text}>
-          <Switch>
-            <Match when={mcpError()}>
-              <span style={{ fg: theme.error }}>•</span> mcp errors{" "}
-              <span style={{ fg: theme.textMuted }}>ctrl+x s</span>
-            </Match>
-            <Match when={true}>
-              <span style={{ fg: theme.success }}>•</span>{" "}
-              {Locale.pluralize(connectedMcpCount(), "{} mcp server", "{} mcp servers")}
-            </Match>
-          </Switch>
-        </text>
-      </box>
-    </Show>
-  )
-
-  let prompt!: PromptRef
-  const args = useArgs()
-  onMount(() => {
-    if (once) return
-    if (route.initialPrompt) {
-      prompt.set(route.initialPrompt)
-      once = true
-    } else if (args.prompt) {
-      prompt.set({ input: args.prompt, parts: [] })
-      once = true
-      prompt.submit()
-    }
-  })
   const directory = useDirectory()
 
   const keybind = useKeybind()
@@ -111,10 +50,26 @@ export function Home() {
             clarifying questions, and ships reviewable changes to a live preview
           </text>
         </box>
-        <box paddingTop={3} maxWidth={75} alignItems="center">
-          <text fg={theme.text}>
-            Email <span style={{ fg: theme.primary }}>stardroplin@stanford.edu</span> for access
-          </text>
+        <box paddingTop={3} maxWidth={75} gap={1}>
+          <box flexDirection="row">
+            <text fg={theme.textMuted}>1. </text>
+            <text
+              fg={theme.primary}
+              onMouseUp={() => {
+                if (connected()) route.navigate({ type: "chat" })
+                else dialog.replace(() => <DialogProviderList />)
+              }}
+            >
+              Demo
+            </text>
+            <text fg={theme.textMuted}> — try with your own API key</text>
+          </box>
+          <box flexDirection="row">
+            <text fg={theme.textMuted}>2. </text>
+            <text fg={theme.textMuted}>
+              Email <span style={{ fg: theme.primary }}>stardroplin@stanford.edu</span> to discuss plans
+            </text>
+          </box>
         </box>
         <box height={3} />
         <Toast />

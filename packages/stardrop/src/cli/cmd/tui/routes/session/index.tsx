@@ -183,7 +183,7 @@ export function Session() {
           message: `Session not found: ${route.sessionID}`,
           variant: "error",
         })
-        return navigate({ type: "home" })
+        return navigate({ type: "chat" })
       })
   })
 

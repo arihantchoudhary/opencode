@@ -1,7 +1,6 @@
 import * as prompts from "@clack/prompts"
 import { Registration } from "."
 import { Log } from "../util/log"
-import { UI } from "../cli/ui"
 
 const API_URL = "https://p9ia72yajp.us-east-1.awsapprunner.com"
 
@@ -19,6 +18,7 @@ const REFERENCE_OPTIONS = [
 export async function promptRegistration() {
   prompts.intro("Welcome to Stardrop!")
 
+  // Step 1: Name (required)
   const name = await prompts.text({
     message: "What's your name?",
     placeholder: "Your name",
@@ -27,16 +27,11 @@ export async function promptRegistration() {
     },
   })
   if (prompts.isCancel(name)) {
-    await Registration.set({
-      email: "",
-      name: "",
-      registered_at: new Date().toISOString(),
-      skipped: true,
-    })
-    prompts.outro("Skipped — you can register later.")
-    return
+    prompts.outro("Name is required to use Stardrop.")
+    process.exit(0)
   }
 
+  // Step 2: Email (required)
   const email = await prompts.text({
     message: "What's your email?",
     placeholder: "you@example.com",
@@ -45,31 +40,21 @@ export async function promptRegistration() {
     },
   })
   if (prompts.isCancel(email)) {
-    await Registration.set({
-      email: "",
-      name: "",
-      registered_at: new Date().toISOString(),
-      skipped: true,
-    })
-    prompts.outro("Skipped — you can register later.")
-    return
+    prompts.outro("Email is required to use Stardrop.")
+    process.exit(0)
   }
 
+  // Step 3: Referral source
   const reference = await prompts.select({
     message: "How did you hear about Stardrop?",
     options: REFERENCE_OPTIONS,
   })
   if (prompts.isCancel(reference)) {
-    await Registration.set({
-      email: "",
-      name: "",
-      registered_at: new Date().toISOString(),
-      skipped: true,
-    })
-    prompts.outro("Skipped — you can register later.")
-    return
+    prompts.outro("Signup is required to use Stardrop.")
+    process.exit(0)
   }
 
+  // Step 4: Register with backend
   const spinner = prompts.spinner()
   spinner.start("Registering...")
 
@@ -99,7 +84,6 @@ export async function promptRegistration() {
     } else {
       const err = await response.json().catch(() => ({}))
       log.warn("registration API error", { status: response.status, err })
-      // Still save locally so we don't ask again
       await Registration.set({
         email,
         name,
