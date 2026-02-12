@@ -128,8 +128,16 @@ export function Header() {
           </Match>
           <Match when={true}>
             <box flexDirection={narrow() ? "column" : "row"} justifyContent="space-between" gap={1}>
-              <Title session={session} />
+              <box flexDirection="row" gap={1}>
+                <text fg={theme.primary}>Stardrop</text>
+                <Title session={session} />
+              </box>
               <box flexDirection="row" gap={1} flexShrink={0}>
+                <Show when={sync.data.vcs?.branch}>
+                  <text fg={theme.text}>
+                    <span style={{ fg: theme.success }}>●</span> {sync.data.vcs!.branch}
+                  </text>
+                </Show>
                 <ContextInfo context={context} cost={cost} />
                 <text fg={theme.textMuted}>v{Installation.VERSION}</text>
               </box>

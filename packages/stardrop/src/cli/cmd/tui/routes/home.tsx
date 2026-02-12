@@ -75,7 +75,13 @@ export function Home() {
         <Toast />
       </box>
       <box paddingTop={1} paddingBottom={1} paddingLeft={2} paddingRight={2} flexDirection="row" flexShrink={0} gap={2}>
+        <text fg={theme.primary}>Stardrop</text>
         <text fg={theme.textMuted}>{directory()}</text>
+        <Show when={sync.data.vcs?.branch}>
+          <text fg={theme.text}>
+            <span style={{ fg: theme.success }}>●</span> git:{sync.data.vcs!.branch}
+          </text>
+        </Show>
         <box gap={1} flexDirection="row" flexShrink={0}>
           <Show when={mcp()}>
             <text fg={theme.text}>
@@ -89,7 +95,6 @@ export function Home() {
               </Switch>
               {connectedMcpCount()} MCP
             </text>
-            <text fg={theme.textMuted}>/status</text>
           </Show>
         </box>
         <box flexGrow={1} />
