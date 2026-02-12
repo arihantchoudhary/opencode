@@ -18,9 +18,9 @@ resource "aws_apprunner_service" "backend" {
         configuration_source = "API"
 
         code_configuration_values {
-          runtime       = "PYTHON_312"
-          build_command = "pip install -r requirements.txt"
-          start_command = "uvicorn app.main:app --host 0.0.0.0 --port 8000"
+          runtime       = "PYTHON_311"
+          build_command = "pip3 install --target . -r requirements.txt"
+          start_command = "python3 -m uvicorn app.main:app --host 0.0.0.0 --port 8000"
           port          = "8000"
 
           runtime_environment_variables = {
