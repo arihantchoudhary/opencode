@@ -1,3 +1,5 @@
+import CommunityStats from "@/components/CommunityStats"
+
 export default function Home() {
   return (
     <div className="min-h-screen bg-[#050505] text-white">
@@ -294,6 +296,21 @@ export default function Home() {
               </div>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* ── Community Stats ── */}
+      <section className="border-t border-white/5 px-6 py-32">
+        <div className="mx-auto max-w-5xl">
+          <div className="mb-12 text-center">
+            <h2 className="mb-4 text-3xl font-bold tracking-tight sm:text-4xl">
+              Join the <span className="gradient-text">community</span>
+            </h2>
+            <p className="mx-auto max-w-xl text-lg text-zinc-400">
+              See who&apos;s already using Stardrop to ship faster.
+            </p>
+          </div>
+          <CommunityStats />
         </div>
       </section>
 
