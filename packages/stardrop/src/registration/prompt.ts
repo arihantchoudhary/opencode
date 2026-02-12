@@ -1,5 +1,6 @@
 import * as prompts from "@clack/prompts"
 import { Registration } from "."
+import { Auth } from "../auth"
 import { Log } from "../util/log"
 
 const API_URL = "https://p9ia72yajp.us-east-1.awsapprunner.com"
@@ -15,13 +16,26 @@ const REFERENCE_OPTIONS = [
   { label: "Other", value: "other" },
 ]
 
-export async function promptRegistration() {
+const PROVIDER_OPTIONS = [
+  { label: "Anthropic", value: "anthropic" },
+  { label: "OpenAI", value: "openai" },
+  { label: "Google", value: "google" },
+]
+
+/**
+ * Login flow that runs on every launch.
+ * Collects name, email, and API key.
+ */
+export async function promptLogin() {
+  const existing = await Registration.get()
+
   prompts.intro("Welcome to Stardrop!")
 
-  // Step 1: Name (required)
+  // Step 1: Name
   const name = await prompts.text({
     message: "What's your name?",
     placeholder: "Your name",
+    defaultValue: existing?.name,
     validate: (v) => {
       if (!v || v.trim().length === 0) return "Name is required"
     },
@@ -31,10 +45,11 @@ export async function promptRegistration() {
     process.exit(0)
   }
 
-  // Step 2: Email (required)
+  // Step 2: Email
   const email = await prompts.text({
     message: "What's your email?",
     placeholder: "you@example.com",
+    defaultValue: existing?.email,
     validate: (v) => {
       if (!v || !v.includes("@")) return "Please enter a valid email"
     },
@@ -44,19 +59,45 @@ export async function promptRegistration() {
     process.exit(0)
   }
 
-  // Step 3: Referral source
-  const reference = await prompts.select({
-    message: "How did you hear about Stardrop?",
-    options: REFERENCE_OPTIONS,
+  // Step 3: Referral source (only on first run)
+  let reference = existing?.reference
+  if (!existing) {
+    const ref = await prompts.select({
+      message: "How did you hear about Stardrop?",
+      options: REFERENCE_OPTIONS,
+    })
+    if (prompts.isCancel(ref)) {
+      prompts.outro("Signup is required to use Stardrop.")
+      process.exit(0)
+    }
+    reference = ref
+  }
+
+  // Step 4: API key
+  const provider = await prompts.select({
+    message: "Which provider?",
+    options: PROVIDER_OPTIONS,
   })
-  if (prompts.isCancel(reference)) {
-    prompts.outro("Signup is required to use Stardrop.")
+  if (prompts.isCancel(provider)) {
+    prompts.outro("An API key is required to use Stardrop.")
     process.exit(0)
   }
 
-  // Step 4: Register with backend
+  const apiKey = await prompts.text({
+    message: `Enter your ${PROVIDER_OPTIONS.find((p) => p.value === provider)?.label} API key`,
+    placeholder: "sk-...",
+    validate: (v) => {
+      if (!v || v.trim().length === 0) return "API key is required"
+    },
+  })
+  if (prompts.isCancel(apiKey)) {
+    prompts.outro("An API key is required to use Stardrop.")
+    process.exit(0)
+  }
+
+  // Step 5: Register with backend + save locally
   const spinner = prompts.spinner()
-  spinner.start("Registering...")
+  spinner.start("Logging in...")
 
   try {
     const response = await fetch(`${API_URL}/auth/signup`, {
@@ -80,7 +121,6 @@ export async function promptRegistration() {
         reference,
         registered_at: new Date().toISOString(),
       })
-      spinner.stop("Registered!")
     } else {
       const err = await response.json().catch(() => ({}))
       log.warn("registration API error", { status: response.status, err })
@@ -90,7 +130,6 @@ export async function promptRegistration() {
         reference,
         registered_at: new Date().toISOString(),
       })
-      spinner.stop("Registered locally.")
     }
   } catch (e) {
     log.warn("registration failed", {
@@ -102,8 +141,16 @@ export async function promptRegistration() {
       reference,
       registered_at: new Date().toISOString(),
     })
-    spinner.stop("Registered locally.")
   }
 
+  // Save API key
+  await Auth.set(provider, { type: "api", key: apiKey })
+
+  spinner.stop("Logged in!")
   prompts.outro("You're all set!")
 }
+
+/**
+ * @deprecated Use promptLogin instead
+ */
+export const promptRegistration = promptLogin

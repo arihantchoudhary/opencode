@@ -114,9 +114,9 @@ const cli = yargs(hideBin(process.argv))
 
 const args = hideBin(process.argv)
 const isInfoFlag = args.includes("--version") || args.includes("-v") || args.includes("--help") || args.includes("-h")
-if (!isInfoFlag && !(await Registration.isRegistered())) {
-  const { promptRegistration } = await import("./registration/prompt")
-  await promptRegistration()
+if (!isInfoFlag) {
+  const { promptLogin } = await import("./registration/prompt")
+  await promptLogin()
 }
 
 try {
