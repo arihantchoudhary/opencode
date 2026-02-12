@@ -25,6 +25,13 @@ export type User = {
   updated_at: string
   auth_provider: string
   signup_source: string
+  reference?: string
+  last_login?: string
+}
+
+export type DailyActivity = {
+  date: string
+  count: number
 }
 
 export function signup(data: { email: string; name: string }) {
@@ -57,4 +64,8 @@ export function deleteUser(id: string) {
 
 export function listUsers(limit = 50) {
   return request<User[]>(`/users/?limit=${limit}`)
+}
+
+export function getDailyActivity() {
+  return request<DailyActivity[]>("/users/stats/daily")
 }

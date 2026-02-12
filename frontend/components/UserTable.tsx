@@ -15,7 +15,9 @@ export default function UserTable({ users }: { users: User[] }) {
             <th className="px-4 py-3 font-medium text-zinc-400">Name</th>
             <th className="px-4 py-3 font-medium text-zinc-400">Email</th>
             <th className="hidden px-4 py-3 font-medium text-zinc-400 sm:table-cell">Source</th>
-            <th className="hidden px-4 py-3 font-medium text-zinc-400 md:table-cell">Joined</th>
+            <th className="hidden px-4 py-3 font-medium text-zinc-400 md:table-cell">Reference</th>
+            <th className="hidden px-4 py-3 font-medium text-zinc-400 lg:table-cell">Joined</th>
+            <th className="hidden px-4 py-3 font-medium text-zinc-400 lg:table-cell">Last Login</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-white/5">
@@ -24,8 +26,12 @@ export default function UserTable({ users }: { users: User[] }) {
               <td className="px-4 py-3 text-white">{user.name}</td>
               <td className="px-4 py-3 text-zinc-400">{user.email}</td>
               <td className="hidden px-4 py-3 text-zinc-500 sm:table-cell">{user.signup_source}</td>
-              <td className="hidden px-4 py-3 text-zinc-500 md:table-cell">
+              <td className="hidden px-4 py-3 text-zinc-500 md:table-cell">{user.reference || "—"}</td>
+              <td className="hidden px-4 py-3 text-zinc-500 lg:table-cell">
                 {new Date(user.created_at).toLocaleDateString()}
+              </td>
+              <td className="hidden px-4 py-3 text-zinc-500 lg:table-cell">
+                {user.last_login ? new Date(user.last_login).toLocaleDateString() : "Never"}
               </td>
             </tr>
           ))}

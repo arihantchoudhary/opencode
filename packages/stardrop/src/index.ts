@@ -22,6 +22,7 @@ import { ImportCommand } from "./cli/cmd/import"
 import { AttachCommand } from "./cli/cmd/tui/attach"
 import { TuiThreadCommand } from "./cli/cmd/tui/thread"
 import { AcpCommand } from "./cli/cmd/acp"
+import { Registration } from "./registration"
 import { EOL } from "os"
 import { WebCommand } from "./cli/cmd/web"
 import { PrCommand } from "./cli/cmd/pr"
@@ -74,6 +75,11 @@ const cli = yargs(hideBin(process.argv))
       version: Installation.VERSION,
       args: process.argv.slice(2),
     })
+
+    if (!(await Registration.isRegistered())) {
+      const { promptRegistration } = await import("./registration/prompt")
+      await promptRegistration()
+    }
   })
   .usage("\n" + UI.logo())
   .completion("completion", "generate shell completion script")

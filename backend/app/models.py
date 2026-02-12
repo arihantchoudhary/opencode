@@ -9,12 +9,18 @@ class UserCreate(BaseModel):
     bio: Optional[str] = None
     auth_provider: str = "email"
     signup_source: str = "web"
+    reference: Optional[str] = None
 
 
 class UserUpdate(BaseModel):
     name: Optional[str] = None
     avatar_url: Optional[str] = None
     bio: Optional[str] = None
+
+
+class DailyActivity(BaseModel):
+    date: str
+    count: int
 
 
 class UserResponse(BaseModel):
@@ -27,3 +33,5 @@ class UserResponse(BaseModel):
     updated_at: str
     auth_provider: str
     signup_source: str
+    reference: Optional[str] = None
+    last_login: Optional[str] = None

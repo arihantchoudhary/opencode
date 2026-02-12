@@ -25,9 +25,10 @@ export default function UserCard({ user }: { user: User }) {
       {user.bio && (
         <p className="mt-4 text-sm leading-relaxed text-zinc-400">{user.bio}</p>
       )}
-      <div className="mt-4 flex gap-4 text-xs text-zinc-600">
+      <div className="mt-4 flex flex-wrap gap-4 text-xs text-zinc-600">
         <span>Joined {new Date(user.created_at).toLocaleDateString()}</span>
         <span>via {user.signup_source}</span>
+        {user.reference && <span>Found us: {user.reference}</span>}
       </div>
     </div>
   )

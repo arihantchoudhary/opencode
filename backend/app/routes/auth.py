@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 from fastapi import APIRouter, HTTPException, Query
 
 from app import db
@@ -19,4 +21,7 @@ def login(email: str = Query(...)):
     user = db.get_user_by_email(email)
     if not user:
         raise HTTPException(404, "User not found")
+    now = datetime.now(timezone.utc).isoformat()
+    db.update_user(user["user_id"], {"last_login": now})
+    user["last_login"] = now
     return user

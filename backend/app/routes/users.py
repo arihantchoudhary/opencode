@@ -1,9 +1,26 @@
+from collections import Counter
+
 from fastapi import APIRouter, HTTPException
 
 from app import db
-from app.models import UserCreate, UserResponse, UserUpdate
+from app.models import DailyActivity, UserCreate, UserResponse, UserUpdate
 
 router = APIRouter(prefix="/users", tags=["users"])
+
+
+@router.get("/stats/daily", response_model=list[DailyActivity])
+def daily_activity():
+    users = db.list_users(limit=1000)
+    counts: Counter[str] = Counter()
+    for user in users:
+        created = user.get("created_at", "")
+        if created:
+            date = created[:10]
+            counts[date] += 1
+    return sorted(
+        [{"date": date, "count": count} for date, count in counts.items()],
+        key=lambda x: x["date"],
+    )
 
 
 @router.post("/", response_model=UserResponse, status_code=201)

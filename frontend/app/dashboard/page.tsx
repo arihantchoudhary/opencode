@@ -3,15 +3,17 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth"
-import { listUsers, updateUser, type User } from "@/lib/api"
+import { listUsers, updateUser, getDailyActivity, type User, type DailyActivity } from "@/lib/api"
 import Navbar from "@/components/Navbar"
 import UserCard from "@/components/UserCard"
 import UserTable from "@/components/UserTable"
+import ActivityChart from "@/components/ActivityChart"
 
 export default function DashboardPage() {
   const { user, setUser } = useAuth()
   const router = useRouter()
   const [users, setUsers] = useState<User[]>([])
+  const [activity, setActivity] = useState<DailyActivity[]>([])
   const [editing, setEditing] = useState(false)
   const [name, setName] = useState("")
   const [bio, setBio] = useState("")
@@ -25,6 +27,7 @@ export default function DashboardPage() {
     setName(user.name)
     setBio(user.bio || "")
     listUsers().then(setUsers).catch(() => {})
+    getDailyActivity().then(setActivity).catch(() => {})
   }, [user, router])
 
   async function handleSave() {
@@ -46,7 +49,7 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-[#050505] text-white">
       <Navbar />
-      <div className="mx-auto max-w-5xl px-6 pt-24 pb-16">
+      <div className="mx-auto max-w-6xl px-6 pt-24 pb-16">
         <h1 className="mb-8 text-3xl font-bold tracking-tight">
           <span className="gradient-text">Dashboard</span>
         </h1>
@@ -105,10 +108,19 @@ export default function DashboardPage() {
           )}
         </section>
 
-        {/* Users list */}
-        <section>
-          <h2 className="mb-4 text-lg font-semibold text-zinc-300">All users</h2>
+        {/* Admin: Users table */}
+        <section className="mb-12">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-zinc-300">All Users</h2>
+            <span className="text-sm text-zinc-600">{users.length} users</span>
+          </div>
           <UserTable users={users} />
+        </section>
+
+        {/* Admin: Daily activity chart */}
+        <section>
+          <h2 className="mb-4 text-lg font-semibold text-zinc-300">Daily Signup Activity</h2>
+          <ActivityChart data={activity} />
         </section>
       </div>
     </div>
