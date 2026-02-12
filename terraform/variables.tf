@@ -1,0 +1,36 @@
+variable "aws_region" {
+  type    = string
+  default = "us-east-1"
+}
+
+variable "environment" {
+  type    = string
+  default = "dev"
+}
+
+variable "project" {
+  type    = string
+  default = "stardrop"
+}
+
+variable "cors_origins" {
+  type        = string
+  default     = "http://localhost:3000"
+  description = "Comma-separated list of allowed CORS origins"
+}
+
+variable "github_connection_arn" {
+  type        = string
+  description = "ARN of the AWS App Runner GitHub connection (create in AWS console under App Runner > GitHub connections)"
+}
+
+variable "github_repo_url" {
+  type        = string
+  default     = "https://github.com/anomalyco/opencode"
+  description = "GitHub repository URL"
+}
+
+variable "github_branch" {
+  type    = string
+  default = "dev"
+}

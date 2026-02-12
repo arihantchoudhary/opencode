@@ -16,11 +16,11 @@ export default function Home() {
             </div>
           </div>
           <div className="flex items-center gap-4">
-            <a href="#login" className="hidden text-sm text-zinc-400 transition-colors hover:text-white sm:block">
+            <a href="/login" className="hidden text-sm text-zinc-400 transition-colors hover:text-white sm:block">
               Login
             </a>
             <a
-              href="#get-started"
+              href="/signup"
               className="rounded-full bg-white px-4 py-2 text-sm font-medium text-black transition-colors hover:bg-zinc-200"
             >
               Get started

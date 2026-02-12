@@ -1,0 +1,7 @@
+aws_region            = "us-east-1"
+environment           = "dev"
+project               = "stardrop"
+cors_origins          = "http://localhost:3000,https://your-app.vercel.app"
+github_connection_arn = "arn:aws:apprunner:us-east-1:ACCOUNT_ID:connection/CONNECTION_NAME/CONNECTION_ID"
+github_repo_url       = "https://github.com/anomalyco/opencode"
+github_branch         = "dev"

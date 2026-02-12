@@ -26,3 +26,16 @@ target
 opencode-dev
 logs/
 *.bun-build
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.backup
+*.tfvars
+!terraform/terraform.tfvars.example
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+backend/.env
