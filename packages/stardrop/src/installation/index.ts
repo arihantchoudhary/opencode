@@ -179,7 +179,17 @@ export namespace Installation {
     await $`${process.execPath} --version`.nothrow().quiet().text()
   }
 
-  export const VERSION = typeof STARDROP_VERSION === "string" ? STARDROP_VERSION : "local"
+  // In dev mode (bun run dev), STARDROP_VERSION isn't defined by the build step.
+  // Fall back to reading from package.json so the UI shows a real version.
+  const _version = (() => {
+    if (typeof STARDROP_VERSION === "string") return STARDROP_VERSION
+    try {
+      return require("../../package.json").version as string
+    } catch {
+      return "local"
+    }
+  })()
+  export const VERSION = _version
   export const CHANNEL = typeof STARDROP_CHANNEL === "string" ? STARDROP_CHANNEL : "local"
   export const USER_AGENT = `opencode/${CHANNEL}/${VERSION}/${Flag.STARDROP_CLIENT}`
 
