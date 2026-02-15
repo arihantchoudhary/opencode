@@ -252,10 +252,9 @@ body {
   animation: intro-rise 1.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-.intro-stagger.delay-1 { animation-delay: 0.2s; }
-.intro-stagger.delay-2 { animation-delay: 0.7s; }
-.intro-stagger.delay-3 { animation-delay: 1.2s; }
-.intro-stagger.delay-4 { animation-delay: 1.6s; }
+.intro-stagger.delay-1 { animation-delay: 0.3s; }
+.intro-stagger.delay-2 { animation-delay: 0.9s; }
+.intro-stagger.delay-3 { animation-delay: 1.5s; }
 
 /* ── Typography ── */
 .intro-stardrop-label {
@@ -305,9 +304,13 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1.25rem;
+  gap: 1.5rem;
   width: 100%;
   max-width: 28rem;
+}
+
+.intro-actions .intro-main-btn {
+  margin-top: 0.25rem;
 }
 
 /* Input field */

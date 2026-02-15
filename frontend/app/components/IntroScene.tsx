@@ -2,89 +2,6 @@
 
 import { useState, useRef, useCallback, useEffect } from 'react';
 
-// ── Ambient Sound ──
-function createAmbientSound() {
-  const ctx = new AudioContext();
-
-  const osc1 = ctx.createOscillator();
-  osc1.type = 'sine';
-  osc1.frequency.value = 55;
-
-  const osc2 = ctx.createOscillator();
-  osc2.type = 'sine';
-  osc2.frequency.value = 82.5;
-
-  const osc3 = ctx.createOscillator();
-  osc3.type = 'triangle';
-  osc3.frequency.value = 165;
-
-  const lfo = ctx.createOscillator();
-  lfo.type = 'sine';
-  lfo.frequency.value = 0.08;
-  const lfoGain = ctx.createGain();
-  lfoGain.gain.value = 3;
-  lfo.connect(lfoGain);
-  lfoGain.connect(osc2.frequency);
-
-  const filter = ctx.createBiquadFilter();
-  filter.type = 'lowpass';
-  filter.frequency.value = 350;
-  filter.Q.value = 0.7;
-
-  const delay = ctx.createDelay();
-  delay.delayTime.value = 0.6;
-  const feedback = ctx.createGain();
-  feedback.gain.value = 0.55;
-  delay.connect(feedback);
-  feedback.connect(delay);
-
-  const bufferSize = ctx.sampleRate * 2;
-  const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-  const output = noiseBuffer.getChannelData(0);
-  for (let i = 0; i < bufferSize; i++) {
-    output[i] = Math.random() * 2 - 1;
-  }
-  const noise = ctx.createBufferSource();
-  noise.buffer = noiseBuffer;
-  noise.loop = true;
-  const noiseFilter = ctx.createBiquadFilter();
-  noiseFilter.type = 'lowpass';
-  noiseFilter.frequency.value = 180;
-  const noiseGain = ctx.createGain();
-  noiseGain.gain.value = 0.015;
-  noise.connect(noiseFilter);
-  noiseFilter.connect(noiseGain);
-
-  const master = ctx.createGain();
-  master.gain.value = 0;
-
-  osc1.connect(filter);
-  osc2.connect(filter);
-  osc3.connect(filter);
-  filter.connect(master);
-  filter.connect(delay);
-  feedback.connect(master);
-  noiseGain.connect(master);
-  master.connect(ctx.destination);
-
-  master.gain.linearRampToValueAtTime(0.12, ctx.currentTime + 4);
-
-  osc1.start();
-  osc2.start();
-  osc3.start();
-  lfo.start();
-  noise.start();
-
-  return {
-    ctx,
-    master,
-    fadeOut: () => {
-      master.gain.linearRampToValueAtTime(0, ctx.currentTime + 1.5);
-      setTimeout(() => ctx.close(), 2000);
-    },
-  };
-}
-
 // ── Main Component ──
 interface IntroSceneProps {
   onNavigateToMain: () => void;
@@ -95,16 +12,6 @@ export default function IntroScene({ onNavigateToMain }: IntroSceneProps) {
   const [skipped, setSkipped] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const soundRef = useRef<ReturnType<typeof createAmbientSound> | null>(null);
-
-  // Cleanup sound on unmount
-  useEffect(() => {
-    return () => {
-      if (soundRef.current) {
-        soundRef.current.fadeOut();
-      }
-    };
-  }, []);
 
   // Auto-play video on mount
   useEffect(() => {
@@ -131,27 +38,24 @@ export default function IntroScene({ onNavigateToMain }: IntroSceneProps) {
     if (videoRef.current) {
       videoRef.current.pause();
     }
-    if (soundRef.current) {
-      soundRef.current.fadeOut();
-      soundRef.current = null;
-    }
   }, []);
 
   const toggleSound = useCallback(() => {
-    if (soundEnabled && soundRef.current) {
-      soundRef.current.fadeOut();
-      soundRef.current = null;
+    const video = videoRef.current;
+    if (!video) return;
+
+    if (soundEnabled) {
+      video.muted = true;
       setSoundEnabled(false);
-    } else if (!soundEnabled) {
-      soundRef.current = createAmbientSound();
+    } else {
+      video.muted = false;
       setSoundEnabled(true);
     }
   }, [soundEnabled]);
 
   const handleMainPage = useCallback(() => {
-    if (soundRef.current) {
-      soundRef.current.fadeOut();
-      soundRef.current = null;
+    if (videoRef.current) {
+      videoRef.current.muted = true;
     }
     onNavigateToMain();
   }, [onNavigateToMain]);
@@ -162,7 +66,7 @@ export default function IntroScene({ onNavigateToMain }: IntroSceneProps) {
 
   return (
     <div className="intro-container">
-      {/* Video background */}
+      {/* Video background — starts muted for autoplay, unmuted via sound toggle */}
       <video
         ref={videoRef}
         className="intro-video"
@@ -230,9 +134,7 @@ export default function IntroScene({ onNavigateToMain }: IntroSceneProps) {
               </svg>
             </button>
           </div>
-        </div>
 
-        <div className={`${anim} delay-4`}>
           <button className="intro-main-btn" onClick={handleMainPage}>
             Enter
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
