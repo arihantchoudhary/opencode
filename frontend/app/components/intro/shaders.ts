@@ -104,7 +104,6 @@ void main() {
   vec3 lightDir = normalize(uLightDir);
   vec3 viewDir = normalize(vViewDir);
 
-  // Surface noise — mix between spherical and banded
   vec3 noiseCoord = vWorldPos * uNoiseScale;
   vec3 bandedCoord = vec3(noiseCoord.x * 0.3, noiseCoord.y * 3.0, noiseCoord.z * 0.3);
   vec3 mixedCoord = mix(noiseCoord, bandedCoord, uBanding);
@@ -112,7 +111,6 @@ void main() {
   float n1 = fbm(mixedCoord + uTime * 0.02, 4);
   float n2 = fbm(mixedCoord * 2.0 + 100.0, 3);
 
-  // Craters
   float crater = 0.0;
   if (uCraters > 0.0) {
     float cn = snoise(vWorldPos * uNoiseScale * 4.0);
@@ -121,38 +119,31 @@ void main() {
 
   float surface = n1 * 0.6 + n2 * 0.3 - crater;
 
-  // Color mapping
   vec3 col = mix(uColor1, uColor2, smoothstep(-0.3, 0.3, surface));
   col = mix(col, uColor3, smoothstep(0.2, 0.7, surface));
 
-  // Lighting
   float NdotL = dot(normal, lightDir);
-  float diffuse = smoothstep(-0.15, 0.3, NdotL); // soft terminator
+  float diffuse = smoothstep(-0.15, 0.3, NdotL);
   float ambient = 0.06;
 
-  // Specular
   vec3 halfDir = normalize(lightDir + viewDir);
   float specular = pow(max(dot(normal, halfDir), 0.0), 40.0) * 0.25;
 
-  // Rim / atmospheric fringe (Fresnel)
   float rim = 1.0 - max(dot(viewDir, normal), 0.0);
   rim = pow(rim, 3.0);
   vec3 atmosphere = uAtmosphereColor * rim * uAtmosphereIntensity;
 
-  // Final color
   vec3 finalColor = col * (diffuse + ambient) + specular * diffuse + atmosphere;
 
   gl_FragColor = vec4(finalColor, uOpacity);
 }
 `;
 
-// ── Background Sky Shader ──
+// ── Background Sky Shader (dramatic sunrise from video) ──
 export const skyVertexShader = /* glsl */ `
-varying vec2 vUv;
 varying vec3 vWorldDir;
 
 void main() {
-  vUv = uv;
   vec4 worldPos = modelMatrix * vec4(position, 1.0);
   vWorldDir = normalize(worldPos.xyz - cameraPosition);
   gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
@@ -163,50 +154,68 @@ export const skyFragmentShader = /* glsl */ `
 ${simplexNoise3D}
 
 uniform float uTime;
-uniform float uDimming; // 0 = full sunrise, 1 = dark
+uniform float uDimming;
 
-varying vec2 vUv;
 varying vec3 vWorldDir;
 
 void main() {
   vec3 dir = normalize(vWorldDir);
+  float elev = dir.y;
 
-  // Base sunrise gradient
-  float horizon = smoothstep(-0.3, 0.4, dir.y);
-  float zenith = smoothstep(0.0, 1.0, dir.y);
+  // Dramatic sunrise at horizon
+  float horizonPeak = exp(-pow((elev + 0.05) / 0.12, 2.0));
+  float horizonWide = exp(-pow((elev + 0.0) / 0.25, 2.0));
+  float blueAtmo = exp(-pow((elev + 0.08) / 0.06, 2.0));
 
-  vec3 horizonColor = vec3(0.85, 0.55, 0.35);   // warm gold/orange
-  vec3 midColor = vec3(0.45, 0.25, 0.55);        // violet
-  vec3 zenithColor = vec3(0.08, 0.12, 0.25);     // deep blue
-  vec3 lowColor = vec3(0.65, 0.35, 0.45);        // muted pink
+  // Color palette matching the reference video
+  vec3 brightGold = vec3(1.0, 0.72, 0.28);
+  vec3 deepOrange = vec3(0.9, 0.3, 0.1);
+  vec3 magenta = vec3(0.5, 0.12, 0.25);
+  vec3 deepViolet = vec3(0.12, 0.05, 0.18);
+  vec3 darkSpace = vec3(0.02, 0.02, 0.05);
+  vec3 blueRim = vec3(0.15, 0.35, 0.85);
 
-  vec3 sky = mix(lowColor, horizonColor, smoothstep(-0.5, -0.1, dir.y));
-  sky = mix(sky, midColor, smoothstep(-0.1, 0.3, dir.y));
-  sky = mix(sky, zenithColor, smoothstep(0.3, 0.8, dir.y));
+  // Sky gradient: bottom to top
+  vec3 sky = darkSpace;
+  sky = mix(deepViolet, sky, smoothstep(0.0, 0.4, elev));
+  sky = mix(magenta, sky, smoothstep(-0.15, 0.15, elev));
+  sky = mix(deepOrange, sky, smoothstep(-0.25, -0.05, elev));
 
-  // Add teal accents
-  float tealNoise = snoise(dir * 2.0 + uTime * 0.01) * 0.5 + 0.5;
-  sky += vec3(0.0, 0.15, 0.2) * tealNoise * 0.15 * (1.0 - zenith);
+  // Sunrise glow
+  sky += brightGold * horizonPeak * 1.2;
+  sky += deepOrange * horizonWide * 0.5;
 
-  // Milky Way band — diagonal arc across the sky
-  vec3 mwAxis = normalize(vec3(0.5, 0.3, 1.0));
-  float mwDist = abs(dot(dir, cross(mwAxis, vec3(0.0, 1.0, 0.0))));
-  float milkyWay = smoothstep(0.25, 0.0, mwDist);
-  float mwDetail = fbm(dir * 8.0 + uTime * 0.005, 4) * 0.5 + 0.5;
+  // Blue atmospheric rim (thin band just below horizon)
+  sky += blueRim * blueAtmo * 0.6;
+
+  // Milky Way band — prominent diagonal arc
+  vec3 mwAxis = normalize(vec3(0.4, 0.35, 1.0));
+  float mwDist = abs(dot(dir, normalize(cross(mwAxis, vec3(0.0, 1.0, 0.0)))));
+  float milkyWay = smoothstep(0.3, 0.0, mwDist);
+  float mwCore = smoothstep(0.12, 0.0, mwDist);
+  float mwDetail = fbm(dir * 10.0 + uTime * 0.003, 5) * 0.5 + 0.5;
+  float mwFine = fbm(dir * 25.0, 3) * 0.5 + 0.5;
   milkyWay *= mwDetail;
-  sky += vec3(0.7, 0.65, 0.8) * milkyWay * 0.2;
+  sky += vec3(0.6, 0.55, 0.75) * milkyWay * 0.25;
+  sky += vec3(0.8, 0.75, 0.9) * mwCore * mwFine * 0.15;
 
-  // Subtle nebula patches
-  float nebula1 = smoothstep(0.2, 0.6, snoise(dir * 3.0 + vec3(50.0, 0.0, 0.0)));
-  float nebula2 = smoothstep(0.2, 0.6, snoise(dir * 3.0 + vec3(0.0, 50.0, 0.0)));
-  sky += vec3(0.3, 0.1, 0.4) * nebula1 * 0.08;
-  sky += vec3(0.1, 0.2, 0.3) * nebula2 * 0.06;
+  // Nebula patches with warm/cool tones
+  float neb1 = smoothstep(0.15, 0.55, snoise(dir * 3.5 + vec3(50.0, 0.0, 0.0)));
+  float neb2 = smoothstep(0.2, 0.6, snoise(dir * 2.5 + vec3(0.0, 50.0, 0.0)));
+  float neb3 = smoothstep(0.1, 0.5, snoise(dir * 4.0 + vec3(0.0, 0.0, 50.0)));
+  sky += vec3(0.35, 0.1, 0.45) * neb1 * 0.1;
+  sky += vec3(0.1, 0.15, 0.35) * neb2 * 0.08;
+  sky += vec3(0.4, 0.2, 0.15) * neb3 * 0.06;
 
-  // Dimming
-  sky = mix(sky, sky * 0.08, uDimming);
+  // Dark shimmer in empty regions
+  float shimmer = snoise(dir * 15.0 + uTime * 0.02) * 0.5 + 0.5;
+  sky += vec3(0.03, 0.02, 0.05) * shimmer * step(0.3, elev);
 
-  // Keep milky way faintly visible even when dim
-  sky += vec3(0.5, 0.45, 0.6) * milkyWay * 0.04 * uDimming;
+  // Dimming for later phases
+  float dimAmount = uDimming * 0.85;
+  sky = mix(sky, sky * 0.1, dimAmount);
+  // Keep Milky Way faintly visible
+  sky += vec3(0.4, 0.35, 0.5) * milkyWay * 0.05 * uDimming;
 
   gl_FragColor = vec4(sky, 1.0);
 }
@@ -229,21 +238,17 @@ varying float vAlpha;
 
 void main() {
   vColor = aColor;
-
   vec3 pos = position;
 
-  // Phase 2 motion: drift
   float motionPhase = smoothstep(0.0, 1.0, uMotion);
   pos += normalize(position) * sin(uTime * aSpeed + aOffset) * motionPhase * 0.5;
 
   vec4 mvPos = modelViewMatrix * vec4(pos, 1.0);
   float dist = -mvPos.z;
 
-  // Twinkle
   float twinkle = sin(uTime * (0.5 + aSpeed) + aOffset * 6.28) * 0.3 + 0.7;
 
-  // Dimming — keep some stars visible
-  float keepStar = step(aOffset, 0.15); // ~15% stay bright
+  float keepStar = step(aOffset, 0.15);
   float dimFactor = mix(1.0, mix(0.05, 0.8, keepStar), uDimming);
 
   vAlpha = twinkle * dimFactor;
@@ -264,7 +269,7 @@ void main() {
 }
 `;
 
-// ── Stardrop Shader ──
+// ── Stardrop Core Shader (planetary appearance) ──
 export const stardropVertexShader = /* glsl */ `
 varying vec3 vNormal;
 varying vec3 vViewDir;
@@ -283,8 +288,82 @@ export const stardropFragmentShader = /* glsl */ `
 ${simplexNoise3D}
 
 uniform float uTime;
-uniform float uPulse;
-uniform float uReveal; // 0 = invisible, 1 = fully visible
+uniform float uReveal;
+
+varying vec3 vNormal;
+varying vec3 vViewDir;
+varying vec3 vWorldPos;
+
+void main() {
+  vec3 normal = normalize(vNormal);
+  vec3 viewDir = normalize(vViewDir);
+  float NdotV = max(dot(normal, viewDir), 0.0);
+  float fresnel = pow(1.0 - NdotV, 2.5);
+
+  // Breathing pulse
+  float breath = sin(uTime * 0.7) * 0.1 + 0.9;
+
+  // Planetary surface — warm amber swirling atmosphere
+  vec3 swirl = vWorldPos * 3.0 + vec3(uTime * 0.15, uTime * 0.08, uTime * 0.12);
+  float n1 = fbm(swirl, 5);
+  float n2 = fbm(swirl * 1.5 + 50.0, 4);
+  float surface = n1 * 0.6 + n2 * 0.4;
+
+  // Color palette: warm amber/gold with hints of copper
+  vec3 amber = vec3(0.95, 0.7, 0.3);
+  vec3 gold = vec3(1.0, 0.85, 0.5);
+  vec3 copper = vec3(0.8, 0.5, 0.25);
+  vec3 cream = vec3(1.0, 0.95, 0.85);
+
+  vec3 surfaceColor = mix(amber, gold, smoothstep(-0.3, 0.2, surface));
+  surfaceColor = mix(surfaceColor, copper, smoothstep(0.1, 0.6, n2));
+  surfaceColor = mix(surfaceColor, cream, smoothstep(0.4, 0.8, surface) * 0.4);
+
+  // Lighting — warm directional
+  vec3 lightDir = normalize(vec3(0.4, 0.6, 0.5));
+  float diffuse = smoothstep(-0.1, 0.4, dot(normal, lightDir));
+
+  // Specular highlight
+  vec3 halfDir = normalize(lightDir + viewDir);
+  float specular = pow(max(dot(normal, halfDir), 0.0), 48.0) * 0.4;
+
+  // Rim glow — warm iridescent
+  vec3 rimColor = mix(gold, cream, fresnel);
+  vec3 atmosphere = rimColor * fresnel * 0.8;
+
+  // Internal warmth
+  float internalGlow = smoothstep(0.3, 0.0, length(vWorldPos)) * 0.2;
+
+  vec3 finalColor = surfaceColor * (diffuse * 0.7 + 0.25) * breath;
+  finalColor += specular * cream;
+  finalColor += atmosphere;
+  finalColor += gold * internalGlow;
+
+  finalColor = min(finalColor, vec3(1.3));
+  float alpha = uReveal * (0.9 + fresnel * 0.1);
+
+  gl_FragColor = vec4(finalColor, alpha);
+}
+`;
+
+// ── Crystal Petal Shader (diamond-like refraction) ──
+export const crystalVertexShader = /* glsl */ `
+varying vec3 vNormal;
+varying vec3 vViewDir;
+varying vec3 vWorldPos;
+
+void main() {
+  vNormal = normalize(normalMatrix * normal);
+  vec4 worldPos = modelMatrix * vec4(position, 1.0);
+  vWorldPos = worldPos.xyz;
+  vViewDir = normalize(cameraPosition - worldPos.xyz);
+  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+}
+`;
+
+export const crystalFragmentShader = /* glsl */ `
+uniform float uTime;
+uniform float uReveal;
 
 varying vec3 vNormal;
 varying vec3 vViewDir;
@@ -294,46 +373,52 @@ void main() {
   vec3 normal = normalize(vNormal);
   vec3 viewDir = normalize(vViewDir);
 
-  // Iridescent color based on view angle
   float NdotV = max(dot(normal, viewDir), 0.0);
-  float fresnel = pow(1.0 - NdotV, 2.0);
+  float fresnel = pow(1.0 - NdotV, 2.5);
 
-  // Breathing pulse
-  float breath = sin(uTime * 0.8) * 0.15 + 0.85;
+  // Warm crystal color palette
+  vec3 goldColor = vec3(1.0, 0.85, 0.5);
+  vec3 pearlColor = vec3(0.95, 0.92, 1.0);
+  vec3 whiteColor = vec3(1.0, 0.98, 0.95);
+  vec3 amberColor = vec3(0.95, 0.75, 0.4);
 
-  // Shifting color palette: gold → pearl → cyan → warm white
-  float colorPhase = uTime * 0.15;
-  vec3 gold = vec3(1.0, 0.85, 0.5);
-  vec3 pearl = vec3(0.95, 0.92, 0.98);
-  vec3 cyan = vec3(0.6, 0.9, 0.95);
-  vec3 warmWhite = vec3(1.0, 0.97, 0.9);
+  // Facet-dependent color variation
+  float facetVar = abs(dot(normal, normalize(vec3(0.577, 0.577, 0.577))));
+  vec3 baseColor = mix(goldColor, pearlColor, facetVar * 0.5);
+  baseColor = mix(baseColor, amberColor, (1.0 - facetVar) * 0.3);
 
-  float t = fract(colorPhase);
-  int phase = int(mod(colorPhase, 4.0));
-  vec3 baseColor;
-  if (phase == 0) baseColor = mix(gold, pearl, t);
-  else if (phase == 1) baseColor = mix(pearl, cyan, t);
-  else if (phase == 2) baseColor = mix(cyan, warmWhite, t);
-  else baseColor = mix(warmWhite, gold, t);
+  // Main light
+  vec3 lightDir = normalize(vec3(0.3, 0.8, 0.5));
+  float diffuse = max(dot(normal, lightDir), 0.0) * 0.4 + 0.6;
 
-  // Internal depth — noise-based variation
-  float internal = snoise(vWorldPos * 4.0 + uTime * 0.3) * 0.15 + 0.85;
+  // Sharp specular (crystal highlights)
+  vec3 halfDir = normalize(lightDir + viewDir);
+  float spec1 = pow(max(dot(normal, halfDir), 0.0), 128.0);
+  float spec2 = pow(max(dot(normal, halfDir), 0.0), 32.0) * 0.3;
 
-  // Diamond refraction effect
-  float refraction = snoise(vWorldPos * 8.0 + viewDir * 2.0) * 0.5 + 0.5;
-  vec3 refrColor = mix(baseColor, vec3(1.0), refraction * 0.3);
+  // Rainbow refraction at edges
+  vec3 refracted = refract(-viewDir, normal, 0.9);
+  float rainbow = dot(refracted, lightDir) * 0.5 + 0.5;
+  vec3 refractionColor = mix(goldColor, pearlColor, rainbow) * fresnel * 0.3;
+
+  // Edge glow
+  float edge = pow(1.0 - abs(NdotV), 4.0);
 
   // Combine
-  vec3 core = refrColor * internal * breath;
-  vec3 rim = baseColor * fresnel * 1.5;
-  vec3 finalColor = core + rim;
+  vec3 color = baseColor * diffuse;
+  color += whiteColor * spec1 * 0.9;
+  color += goldColor * spec2;
+  color += goldColor * edge * 0.3;
+  color += refractionColor;
+  color += amberColor * 0.1; // internal glow
 
-  // Soft glow — never blinding
-  finalColor = min(finalColor, vec3(1.2));
+  // Gentle breathing
+  float breath = sin(uTime * 0.6) * 0.05 + 0.95;
+  color *= breath;
 
-  float alpha = uReveal * (0.85 + fresnel * 0.15);
+  float alpha = (0.55 + fresnel * 0.35 + spec1 * 0.1) * uReveal;
 
-  gl_FragColor = vec4(finalColor, alpha);
+  gl_FragColor = vec4(color, alpha);
 }
 `;
 
