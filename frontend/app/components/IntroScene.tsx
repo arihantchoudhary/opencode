@@ -158,6 +158,8 @@ export default function IntroScene({ onNavigateToMain }: IntroSceneProps) {
 
   const showFinalUI = completed || skipped;
 
+  const anim = showFinalUI ? 'intro-stagger animate' : 'intro-stagger';
+
   return (
     <div className="intro-container">
       {/* Video background */}
@@ -169,6 +171,9 @@ export default function IntroScene({ onNavigateToMain }: IntroSceneProps) {
         playsInline
         preload="auto"
       />
+
+      {/* Dimming overlay — darkens the last frame so text is legible */}
+      <div className={`intro-dim${showFinalUI ? ' visible' : ''}`} />
 
       {/* Skip button */}
       {!showFinalUI && (
@@ -197,23 +202,20 @@ export default function IntroScene({ onNavigateToMain }: IntroSceneProps) {
         )}
       </button>
 
-      {/* Final UI overlay — fades in when video ends or is skipped */}
+      {/* Final UI overlay — staggered entrance when video ends or is skipped */}
       <div
         className="intro-final"
-        style={{
-          opacity: showFinalUI ? 1 : 0,
-          pointerEvents: showFinalUI ? 'auto' : 'none',
-        }}
+        style={{ pointerEvents: showFinalUI ? 'auto' : 'none' }}
       >
-        <div className="intro-stardrop-label">Stardrop</div>
+        <div className={`${anim} delay-1 intro-stardrop-label`}>Stardrop</div>
 
-        <p className="intro-quote">
+        <p className={`${anim} delay-2 intro-quote`}>
           &ldquo;I have circled many stars, but only yours brought me down to Earth.
           <br />
           I am Stardrop, here to serve your vision.&rdquo;
         </p>
 
-        <div className="intro-actions">
+        <div className={`${anim} delay-3 intro-actions`}>
           <div className="intro-input-wrapper">
             <input
               type="text"
@@ -228,9 +230,11 @@ export default function IntroScene({ onNavigateToMain }: IntroSceneProps) {
               </svg>
             </button>
           </div>
+        </div>
 
+        <div className={`${anim} delay-4`}>
           <button className="intro-main-btn" onClick={handleMainPage}>
-            Main Page
+            Enter
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M5 12h14M12 5l7 7-7 7" />
             </svg>

@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&display=swap');
 @import "tailwindcss";
 
 :root {
@@ -195,6 +195,26 @@ body {
   border-color: rgba(255, 255, 255, 0.15);
 }
 
+/* Dimming overlay — darkens the video ending for text readability */
+.intro-dim {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  background: radial-gradient(
+    ellipse 80% 70% at 50% 50%,
+    rgba(0, 0, 0, 0.75) 0%,
+    rgba(0, 0, 0, 0.85) 60%,
+    rgba(0, 0, 0, 0.92) 100%
+  );
+  opacity: 0;
+  transition: opacity 2s cubic-bezier(0.25, 0.1, 0.25, 1);
+  pointer-events: none;
+}
+
+.intro-dim.visible {
+  opacity: 1;
+}
+
 /* Final UI overlay */
 .intro-final {
   position: absolute;
@@ -205,37 +225,80 @@ body {
   align-items: center;
   justify-content: center;
   padding: 2rem;
-  transition: opacity 1.5s ease;
 }
 
+/* ── Staggered entrance animation ── */
+@keyframes intro-rise {
+  0% {
+    opacity: 0;
+    transform: translateY(24px);
+    filter: blur(6px);
+  }
+  60% {
+    filter: blur(0px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0px);
+  }
+}
+
+.intro-stagger {
+  opacity: 0;
+}
+
+.intro-stagger.animate {
+  animation: intro-rise 1.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.intro-stagger.delay-1 { animation-delay: 0.2s; }
+.intro-stagger.delay-2 { animation-delay: 0.7s; }
+.intro-stagger.delay-3 { animation-delay: 1.2s; }
+.intro-stagger.delay-4 { animation-delay: 1.6s; }
+
+/* ── Typography ── */
 .intro-stardrop-label {
-  font-family: 'Cormorant Garamond', Georgia, serif;
-  font-size: 1rem;
-  font-weight: 300;
-  letter-spacing: 0.3em;
+  font-family: 'Cinzel', 'Cormorant Garamond', Georgia, serif;
+  font-size: clamp(0.85rem, 1.5vw, 1.1rem);
+  font-weight: 400;
+  letter-spacing: 0.45em;
   text-transform: uppercase;
-  color: rgba(255, 230, 200, 0.6);
-  margin-bottom: 2rem;
-  animation: intro-text-glow 4s ease-in-out infinite alternate;
+  color: rgba(255, 235, 210, 0.9);
+  margin-bottom: 2.5rem;
+  text-shadow:
+    0 0 30px rgba(255, 220, 180, 0.3),
+    0 0 60px rgba(255, 200, 150, 0.1);
 }
 
-@keyframes intro-text-glow {
-  0% { color: rgba(255, 230, 200, 0.5); }
-  50% { color: rgba(200, 220, 240, 0.6); }
-  100% { color: rgba(255, 240, 220, 0.55); }
+.intro-stardrop-label::after {
+  content: '';
+  display: block;
+  width: 3rem;
+  height: 1px;
+  margin: 1rem auto 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 220, 180, 0.4),
+    transparent
+  );
 }
 
 .intro-quote {
   font-family: 'Cormorant Garamond', Georgia, serif;
-  font-size: clamp(1.1rem, 2.5vw, 1.6rem);
-  font-weight: 300;
+  font-size: clamp(1.15rem, 2.8vw, 1.75rem);
+  font-weight: 400;
   font-style: italic;
-  line-height: 1.8;
+  line-height: 2;
   text-align: center;
-  color: rgba(255, 255, 255, 0.75);
-  max-width: 42rem;
-  margin-bottom: 3rem;
-  letter-spacing: 0.02em;
+  color: rgba(255, 255, 255, 0.92);
+  max-width: 40rem;
+  margin-bottom: 3.5rem;
+  letter-spacing: 0.03em;
+  text-shadow:
+    0 2px 20px rgba(0, 0, 0, 0.6),
+    0 0 40px rgba(139, 92, 246, 0.08);
 }
 
 .intro-actions {
@@ -256,19 +319,21 @@ body {
 .intro-input {
   width: 100%;
   padding: 0.85rem 3rem 0.85rem 1.25rem;
-  font-family: var(--font-sans), system-ui, sans-serif;
-  font-size: 0.9rem;
-  color: rgba(255, 255, 255, 0.85);
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 1rem;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  color: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 0.75rem;
   outline: none;
   transition: all 0.3s ease;
-  backdrop-filter: blur(12px);
+  backdrop-filter: blur(16px);
 }
 
 .intro-input::placeholder {
-  color: rgba(255, 255, 255, 0.25);
+  color: rgba(255, 255, 255, 0.3);
   font-style: italic;
 }
 
@@ -306,9 +371,11 @@ body {
   align-items: center;
   gap: 0.5rem;
   padding: 0.6rem 1.5rem;
-  font-size: 0.85rem;
+  font-family: 'Cinzel', Georgia, serif;
+  font-size: 0.75rem;
   font-weight: 400;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
   color: rgba(255, 255, 255, 0.5);
   background: transparent;
   border: 1px solid rgba(255, 255, 255, 0.1);
