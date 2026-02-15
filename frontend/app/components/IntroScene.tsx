@@ -1,15 +1,11 @@
 'use client';
 
 import { useState, useRef, useCallback, useEffect } from 'react';
-import dynamic from 'next/dynamic';
-
-const SpaceScene = dynamic(() => import('./intro/SpaceScene'), { ssr: false });
 
 // ── Ambient Sound ──
 function createAmbientSound() {
   const ctx = new AudioContext();
 
-  // Low drone
   const osc1 = ctx.createOscillator();
   osc1.type = 'sine';
   osc1.frequency.value = 55;
@@ -22,7 +18,6 @@ function createAmbientSound() {
   osc3.type = 'triangle';
   osc3.frequency.value = 165;
 
-  // LFO
   const lfo = ctx.createOscillator();
   lfo.type = 'sine';
   lfo.frequency.value = 0.08;
@@ -31,13 +26,11 @@ function createAmbientSound() {
   lfo.connect(lfoGain);
   lfoGain.connect(osc2.frequency);
 
-  // Filter
   const filter = ctx.createBiquadFilter();
   filter.type = 'lowpass';
   filter.frequency.value = 350;
   filter.Q.value = 0.7;
 
-  // Reverb via delay
   const delay = ctx.createDelay();
   delay.delayTime.value = 0.6;
   const feedback = ctx.createGain();
@@ -45,7 +38,6 @@ function createAmbientSound() {
   delay.connect(feedback);
   feedback.connect(delay);
 
-  // Noise for texture
   const bufferSize = ctx.sampleRate * 2;
   const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
   const output = noiseBuffer.getChannelData(0);
@@ -63,7 +55,6 @@ function createAmbientSound() {
   noise.connect(noiseFilter);
   noiseFilter.connect(noiseGain);
 
-  // Master
   const master = ctx.createGain();
   master.gain.value = 0;
 
@@ -76,7 +67,6 @@ function createAmbientSound() {
   noiseGain.connect(master);
   master.connect(ctx.destination);
 
-  // Fade in over 4 seconds
   master.gain.linearRampToValueAtTime(0.12, ctx.currentTime + 4);
 
   osc1.start();
@@ -101,14 +91,11 @@ interface IntroSceneProps {
 }
 
 export default function IntroScene({ onNavigateToMain }: IntroSceneProps) {
-  const [phase, setPhase] = useState(0);
-  const [textReveal, setTextReveal] = useState(0);
   const [completed, setCompleted] = useState(false);
   const [skipped, setSkipped] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const videoRef = useRef<HTMLVideoElement>(null);
   const soundRef = useRef<ReturnType<typeof createAmbientSound> | null>(null);
-  const textRevealIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Cleanup sound on unmount
   useEffect(() => {
@@ -116,32 +103,34 @@ export default function IntroScene({ onNavigateToMain }: IntroSceneProps) {
       if (soundRef.current) {
         soundRef.current.fadeOut();
       }
-      if (textRevealIntervalRef.current) {
-        clearInterval(textRevealIntervalRef.current);
-      }
     };
   }, []);
 
-  // Mark loaded after a brief delay (R3F initialization)
+  // Auto-play video on mount
   useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 800);
-    return () => clearTimeout(timer);
-  }, []);
+    const video = videoRef.current;
+    if (!video) return;
 
-  const handlePhaseChange = useCallback((newPhase: number, reveal: number) => {
-    setPhase(newPhase);
-    setTextReveal(reveal);
-  }, []);
+    const handleEnded = () => {
+      setCompleted(true);
+    };
 
-  const handleComplete = useCallback(() => {
-    setCompleted(true);
+    video.addEventListener('ended', handleEnded);
+    video.play().catch(() => {
+      // Autoplay may be blocked — that's ok, the video will still show first frame
+    });
+
+    return () => {
+      video.removeEventListener('ended', handleEnded);
+    };
   }, []);
 
   const handleSkip = useCallback(() => {
     setSkipped(true);
     setCompleted(true);
-    setTextReveal(1);
-    setPhase(5);
+    if (videoRef.current) {
+      videoRef.current.pause();
+    }
     if (soundRef.current) {
       soundRef.current.fadeOut();
       soundRef.current = null;
@@ -171,23 +160,18 @@ export default function IntroScene({ onNavigateToMain }: IntroSceneProps) {
 
   return (
     <div className="intro-container">
-      {/* Loading overlay */}
-      {loading && (
-        <div className="intro-loading">
-          <div className="intro-loading-text">Preparing your journey...</div>
-        </div>
-      )}
-
-      {/* 3D Canvas */}
-      {!skipped && (
-        <SpaceScene onPhaseChange={handlePhaseChange} onComplete={handleComplete} />
-      )}
-
-      {/* Skipped state — static background */}
-      {skipped && <div className="intro-static-bg" />}
+      {/* Video background */}
+      <video
+        ref={videoRef}
+        className="intro-video"
+        src="/intro.mp4"
+        muted
+        playsInline
+        preload="auto"
+      />
 
       {/* Skip button */}
-      {!showFinalUI && !loading && (
+      {!showFinalUI && (
         <button className="intro-skip" onClick={handleSkip}>
           Skip
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -198,28 +182,26 @@ export default function IntroScene({ onNavigateToMain }: IntroSceneProps) {
       )}
 
       {/* Sound toggle */}
-      {!loading && (
-        <button className="intro-sound" onClick={toggleSound} aria-label={soundEnabled ? 'Mute' : 'Enable sound'}>
-          {soundEnabled ? (
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-              <path d="M11 5L6 9H2v6h4l5 4V5z" />
-              <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07" />
-            </svg>
-          ) : (
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-              <path d="M11 5L6 9H2v6h4l5 4V5z" />
-              <line x1="23" y1="9" x2="17" y2="15" />
-              <line x1="17" y1="9" x2="23" y2="15" />
-            </svg>
-          )}
-        </button>
-      )}
+      <button className="intro-sound" onClick={toggleSound} aria-label={soundEnabled ? 'Mute' : 'Enable sound'}>
+        {soundEnabled ? (
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <path d="M11 5L6 9H2v6h4l5 4V5z" />
+            <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07" />
+          </svg>
+        ) : (
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <path d="M11 5L6 9H2v6h4l5 4V5z" />
+            <line x1="23" y1="9" x2="17" y2="15" />
+            <line x1="17" y1="9" x2="23" y2="15" />
+          </svg>
+        )}
+      </button>
 
-      {/* Final UI overlay */}
+      {/* Final UI overlay — fades in when video ends or is skipped */}
       <div
         className="intro-final"
         style={{
-          opacity: showFinalUI ? 1 : Math.max(0, textReveal),
+          opacity: showFinalUI ? 1 : 0,
           pointerEvents: showFinalUI ? 'auto' : 'none',
         }}
       >
