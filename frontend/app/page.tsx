@@ -2,9 +2,14 @@ import CommunityStats from "@/components/CommunityStats"
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-[#050505] text-white">
+    <div className="min-h-screen bg-black text-white">
+      {/* ── Starfield background ── */}
+      <div className="starfield" aria-hidden="true">
+        <div className="star-layer" />
+      </div>
+
       {/* ── Navbar ── */}
-      <nav className="fixed top-0 z-50 w-full border-b border-white/5 bg-[#050505]/80 backdrop-blur-xl">
+      <nav className="fixed top-0 z-50 w-full border-b border-white/5 bg-black/80 backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
           <div className="flex items-center gap-8">
             <a href="/" className="text-xl font-bold tracking-tight">

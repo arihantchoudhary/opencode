@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 :root {
-  --background: #050505;
+  --background: #000000;
   --foreground: #ededed;
 }
 
@@ -27,6 +27,86 @@ body {
 
 .hero-glow {
   background: radial-gradient(ellipse 60% 40% at 50% 0%, rgba(139, 92, 246, 0.15) 0%, transparent 70%);
+}
+
+/* ── Starfield ── */
+.starfield {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.starfield::before,
+.starfield::after,
+.starfield .star-layer {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-repeat: repeat;
+  will-change: transform;
+}
+
+/* Small stars */
+.starfield::before {
+  background-image:
+    radial-gradient(1px 1px at 50px 120px, #fff, transparent),
+    radial-gradient(1px 1px at 180px 30px, #fff, transparent),
+    radial-gradient(1px 1px at 320px 200px, #fff, transparent),
+    radial-gradient(1px 1px at 470px 80px, #fff, transparent),
+    radial-gradient(1px 1px at 600px 250px, #fff, transparent),
+    radial-gradient(1px 1px at 120px 310px, #fff, transparent),
+    radial-gradient(1px 1px at 400px 400px, #fff, transparent),
+    radial-gradient(1px 1px at 700px 150px, #fff, transparent),
+    radial-gradient(1px 1px at 250px 480px, #fff, transparent),
+    radial-gradient(1px 1px at 550px 350px, #fff, transparent),
+    radial-gradient(1px 1px at 80px 500px, #fff, transparent),
+    radial-gradient(1px 1px at 650px 450px, #fff, transparent),
+    radial-gradient(1px 1px at 350px 550px, #fff, transparent),
+    radial-gradient(1px 1px at 150px 600px, #fff, transparent),
+    radial-gradient(1px 1px at 500px 100px, #fff, transparent);
+  background-size: 800px 700px;
+  opacity: 0.6;
+  animation: twinkle 4s ease-in-out infinite alternate;
+}
+
+/* Medium stars */
+.starfield::after {
+  background-image:
+    radial-gradient(1.5px 1.5px at 100px 200px, #fff, transparent),
+    radial-gradient(1.5px 1.5px at 350px 50px, #fff, transparent),
+    radial-gradient(1.5px 1.5px at 550px 300px, #fff, transparent),
+    radial-gradient(1.5px 1.5px at 200px 450px, #fff, transparent),
+    radial-gradient(1.5px 1.5px at 700px 100px, #fff, transparent),
+    radial-gradient(1.5px 1.5px at 450px 500px, #fff, transparent),
+    radial-gradient(1.5px 1.5px at 50px 350px, #fff, transparent),
+    radial-gradient(1.5px 1.5px at 600px 550px, #fff, transparent),
+    radial-gradient(1.5px 1.5px at 300px 150px, #fff, transparent),
+    radial-gradient(1.5px 1.5px at 150px 50px, #fff, transparent);
+  background-size: 900px 650px;
+  opacity: 0.5;
+  animation: twinkle 6s ease-in-out 1s infinite alternate;
+}
+
+/* Large / bright stars */
+.star-layer {
+  background-image:
+    radial-gradient(2px 2px at 250px 100px, #fff, transparent),
+    radial-gradient(2px 2px at 500px 400px, #fff, transparent),
+    radial-gradient(2px 2px at 100px 500px, #fff, transparent),
+    radial-gradient(2px 2px at 650px 200px, #fff, transparent),
+    radial-gradient(2px 2px at 400px 300px, #fff, transparent),
+    radial-gradient(2.5px 2.5px at 300px 550px, rgba(167, 139, 250, 0.9), transparent),
+    radial-gradient(2.5px 2.5px at 700px 350px, rgba(129, 140, 248, 0.9), transparent);
+  background-size: 1000px 700px;
+  opacity: 0.7;
+  animation: twinkle 5s ease-in-out 2s infinite alternate;
+}
+
+@keyframes twinkle {
+  0% { opacity: 0.4; }
+  100% { opacity: 0.8; }
 }
 
 .card-glow:hover {
