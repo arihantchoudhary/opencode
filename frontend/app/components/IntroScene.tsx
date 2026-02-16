@@ -2,20 +2,18 @@
 
 import { useState, useRef, useCallback, useEffect } from 'react';
 
+const ANIMATIONS = [
+  { src: '/intro.mp4', label: 'Animation 1' },
+  { src: '/intro2.mp4', label: 'Animation 2' },
+  { src: '/intro3.mp4', label: 'Animation 3' },
+];
+
 // ── Selection Screen ──
-interface SelectionScreenProps {
-  onSelect: (video: string) => void;
-}
+function SelectionScreen({ onSelect }: { onSelect: (src: string) => void }) {
+  const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
 
-function SelectionScreen({ onSelect }: SelectionScreenProps) {
-  const [hovered, setHovered] = useState<string | null>(null);
-  const vid1Ref = useRef<HTMLVideoElement>(null);
-  const vid2Ref = useRef<HTMLVideoElement>(null);
-
-  // Auto-play preview videos on mount (muted for autoplay)
   useEffect(() => {
-    vid1Ref.current?.play().catch(() => {});
-    vid2Ref.current?.play().catch(() => {});
+    videoRefs.current.forEach((v) => v?.play().catch(() => {}));
   }, []);
 
   return (
@@ -27,43 +25,25 @@ function SelectionScreen({ onSelect }: SelectionScreenProps) {
         </div>
 
         <div className="select-options intro-stagger animate delay-2">
-          <button
-            className={`select-card${hovered === '1' ? ' hovered' : ''}`}
-            onClick={() => onSelect('/intro.mp4')}
-            onMouseEnter={() => setHovered('1')}
-            onMouseLeave={() => setHovered(null)}
-          >
-            <div className="select-preview">
-              <video
-                ref={vid1Ref}
-                src="/intro.mp4"
-                muted
-                loop
-                playsInline
-                preload="auto"
-              />
-            </div>
-            <span className="select-label">Animation 1</span>
-          </button>
-
-          <button
-            className={`select-card${hovered === '2' ? ' hovered' : ''}`}
-            onClick={() => onSelect('/intro2.mp4')}
-            onMouseEnter={() => setHovered('2')}
-            onMouseLeave={() => setHovered(null)}
-          >
-            <div className="select-preview">
-              <video
-                ref={vid2Ref}
-                src="/intro2.mp4"
-                muted
-                loop
-                playsInline
-                preload="auto"
-              />
-            </div>
-            <span className="select-label">Animation 2</span>
-          </button>
+          {ANIMATIONS.map((anim, i) => (
+            <button
+              key={anim.src}
+              className="select-card"
+              onClick={() => onSelect(anim.src)}
+            >
+              <div className="select-preview">
+                <video
+                  ref={(el) => { videoRefs.current[i] = el; }}
+                  src={anim.src}
+                  muted
+                  loop
+                  playsInline
+                  preload="auto"
+                />
+              </div>
+              <span className="select-label">{anim.label}</span>
+            </button>
+          ))}
         </div>
       </div>
     </div>
@@ -71,30 +51,56 @@ function SelectionScreen({ onSelect }: SelectionScreenProps) {
 }
 
 // ── Intro Player ──
-interface IntroPlayerProps {
+function IntroPlayer({
+  videoSrc,
+  onNavigateToMain,
+  onGoBack,
+}: {
   videoSrc: string;
   onNavigateToMain: () => void;
-}
-
-function IntroPlayer({ videoSrc, onNavigateToMain }: IntroPlayerProps) {
+  onGoBack: () => void;
+}) {
   const [completed, setCompleted] = useState(false);
   const [skipped, setSkipped] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const fadeRef = useRef<number | null>(null);
 
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
 
     const handleEnded = () => setCompleted(true);
-
     video.addEventListener('ended', handleEnded);
     video.play().catch(() => {});
 
     return () => {
       video.removeEventListener('ended', handleEnded);
+      if (fadeRef.current) cancelAnimationFrame(fadeRef.current);
     };
   }, []);
+
+  // Fade music out when final UI appears
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !completed) return;
+
+    // Gradually reduce volume over ~2 seconds
+    const startVolume = video.volume;
+    const startTime = performance.now();
+    const duration = 2000;
+
+    function fadeStep(now: number) {
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      video!.volume = startVolume * (1 - progress);
+      if (progress < 1) {
+        fadeRef.current = requestAnimationFrame(fadeStep);
+      }
+    }
+
+    fadeRef.current = requestAnimationFrame(fadeStep);
+  }, [completed]);
 
   const handleSkip = useCallback(() => {
     setSkipped(true);
@@ -114,6 +120,14 @@ function IntroPlayer({ videoSrc, onNavigateToMain }: IntroPlayerProps) {
     onNavigateToMain();
   }, [onNavigateToMain]);
 
+  const handleGoBack = useCallback(() => {
+    if (videoRef.current) {
+      videoRef.current.pause();
+      videoRef.current.muted = true;
+    }
+    onGoBack();
+  }, [onGoBack]);
+
   const showFinalUI = completed || skipped;
   const anim = showFinalUI ? 'intro-stagger animate' : 'intro-stagger';
 
@@ -130,14 +144,23 @@ function IntroPlayer({ videoSrc, onNavigateToMain }: IntroPlayerProps) {
 
       <div className={`intro-dim${showFinalUI ? ' visible' : ''}`} />
 
+      {/* Top-left controls: go back + skip */}
       {!showFinalUI && (
-        <button className="intro-skip" onClick={handleSkip}>
-          Skip
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M5 4l10 8-10 8V4z" />
-            <line x1="19" y1="5" x2="19" y2="19" />
-          </svg>
-        </button>
+        <>
+          <button className="intro-back" onClick={handleGoBack}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M19 12H5M12 19l-7-7 7-7" />
+            </svg>
+            Back
+          </button>
+          <button className="intro-skip" onClick={handleSkip}>
+            Skip
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M5 4l10 8-10 8V4z" />
+              <line x1="19" y1="5" x2="19" y2="19" />
+            </svg>
+          </button>
+        </>
       )}
 
       <button className="intro-sound" onClick={toggleSound} aria-label={soundEnabled ? 'Mute' : 'Enable sound'}>
@@ -155,6 +178,7 @@ function IntroPlayer({ videoSrc, onNavigateToMain }: IntroPlayerProps) {
         )}
       </button>
 
+      {/* Final overlay */}
       <div
         className="intro-final"
         style={{ pointerEvents: showFinalUI ? 'auto' : 'none' }}
@@ -183,12 +207,20 @@ function IntroPlayer({ videoSrc, onNavigateToMain }: IntroPlayerProps) {
             </button>
           </div>
 
-          <button className="intro-main-btn" onClick={handleMainPage}>
-            Enter
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M5 12h14M12 5l7 7-7 7" />
-            </svg>
-          </button>
+          <div className="intro-final-btns">
+            <button className="intro-main-btn" onClick={handleGoBack}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M19 12H5M12 19l-7-7 7-7" />
+              </svg>
+              Go Back
+            </button>
+            <button className="intro-main-btn" onClick={handleMainPage}>
+              Enter
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M5 12h14M12 5l7 7-7 7" />
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -196,15 +228,21 @@ function IntroPlayer({ videoSrc, onNavigateToMain }: IntroPlayerProps) {
 }
 
 // ── Main Export ──
-interface IntroSceneProps {
-  onNavigateToMain: () => void;
-}
-
-export default function IntroScene({ onNavigateToMain }: IntroSceneProps) {
+export default function IntroScene({ onNavigateToMain }: { onNavigateToMain: () => void }) {
   const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
 
+  const handleGoBack = useCallback(() => {
+    setSelectedVideo(null);
+  }, []);
+
   if (selectedVideo) {
-    return <IntroPlayer videoSrc={selectedVideo} onNavigateToMain={onNavigateToMain} />;
+    return (
+      <IntroPlayer
+        videoSrc={selectedVideo}
+        onNavigateToMain={onNavigateToMain}
+        onGoBack={handleGoBack}
+      />
+    );
   }
 
   return <SelectionScreen onSelect={setSelectedVideo} />;

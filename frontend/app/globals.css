@@ -1,5 +1,20 @@
-@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&display=swap');
 @import "tailwindcss";
+
+@font-face {
+  font-family: 'Savate';
+  src: url('/fonts/Savate-VariableFont_wght.ttf') format('truetype');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Savate';
+  src: url('/fonts/Savate-Italic-VariableFont_wght.ttf') format('truetype');
+  font-weight: 100 900;
+  font-style: italic;
+  font-display: swap;
+}
 
 :root {
   --background: #000000;
@@ -141,6 +156,35 @@ body {
   z-index: 0;
 }
 
+/* Back button */
+.intro-back {
+  position: absolute;
+  top: 2rem;
+  left: 2rem;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1rem;
+  font-family: 'Savate', Georgia, serif;
+  font-size: 0.8rem;
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  color: rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(8px);
+}
+
+.intro-back:hover {
+  color: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
 /* Skip button */
 .intro-skip {
   position: absolute;
@@ -151,6 +195,7 @@ body {
   align-items: center;
   gap: 0.4rem;
   padding: 0.5rem 1rem;
+  font-family: 'Savate', Georgia, serif;
   font-size: 0.8rem;
   font-weight: 400;
   letter-spacing: 0.1em;
@@ -258,7 +303,7 @@ body {
 
 /* ── Typography ── */
 .intro-stardrop-label {
-  font-family: 'Cinzel', 'Cormorant Garamond', Georgia, serif;
+  font-family: 'Savate', Georgia, serif;
   font-size: clamp(0.85rem, 1.5vw, 1.1rem);
   font-weight: 400;
   letter-spacing: 0.45em;
@@ -285,7 +330,7 @@ body {
 }
 
 .intro-quote {
-  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-family: 'Savate', Georgia, serif;
   font-size: clamp(1.15rem, 2.8vw, 1.75rem);
   font-weight: 400;
   font-style: italic;
@@ -309,7 +354,11 @@ body {
   max-width: 28rem;
 }
 
-.intro-actions .intro-main-btn {
+.intro-final-btns {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  justify-content: center;
   margin-top: 0.25rem;
 }
 
@@ -322,7 +371,7 @@ body {
 .intro-input {
   width: 100%;
   padding: 0.85rem 3rem 0.85rem 1.25rem;
-  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-family: 'Savate', Georgia, serif;
   font-size: 1rem;
   font-weight: 400;
   letter-spacing: 0.02em;
@@ -374,7 +423,7 @@ body {
   align-items: center;
   gap: 0.5rem;
   padding: 0.6rem 1.5rem;
-  font-family: 'Cinzel', Georgia, serif;
+  font-family: 'Savate', Georgia, serif;
   font-size: 0.75rem;
   font-weight: 400;
   letter-spacing: 0.15em;
@@ -419,7 +468,7 @@ body {
 }
 
 .select-title {
-  font-family: 'Cinzel', 'Cormorant Garamond', Georgia, serif;
+  font-family: 'Savate', Georgia, serif;
   font-size: clamp(1.2rem, 2.5vw, 1.8rem);
   font-weight: 400;
   letter-spacing: 0.4em;
@@ -432,7 +481,7 @@ body {
 }
 
 .select-subtitle {
-  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-family: 'Savate', Georgia, serif;
   font-size: clamp(0.9rem, 1.5vw, 1.1rem);
   font-weight: 300;
   font-style: italic;
@@ -466,7 +515,7 @@ body {
 
 .select-preview {
   position: relative;
-  width: clamp(260px, 30vw, 400px);
+  width: clamp(220px, 22vw, 340px);
   aspect-ratio: 16 / 9;
   border-radius: 0.75rem;
   overflow: hidden;
@@ -488,7 +537,7 @@ body {
 }
 
 .select-label {
-  font-family: 'Cinzel', Georgia, serif;
+  font-family: 'Savate', Georgia, serif;
   font-size: 0.8rem;
   font-weight: 400;
   letter-spacing: 0.2em;
