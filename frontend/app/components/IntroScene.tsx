@@ -2,30 +2,94 @@
 
 import { useState, useRef, useCallback, useEffect } from 'react';
 
-// ── Main Component ──
-interface IntroSceneProps {
+// ── Selection Screen ──
+interface SelectionScreenProps {
+  onSelect: (video: string) => void;
+}
+
+function SelectionScreen({ onSelect }: SelectionScreenProps) {
+  const [hovered, setHovered] = useState<string | null>(null);
+  const vid1Ref = useRef<HTMLVideoElement>(null);
+  const vid2Ref = useRef<HTMLVideoElement>(null);
+
+  // Auto-play preview videos on mount (muted for autoplay)
+  useEffect(() => {
+    vid1Ref.current?.play().catch(() => {});
+    vid2Ref.current?.play().catch(() => {});
+  }, []);
+
+  return (
+    <div className="intro-container">
+      <div className="select-screen">
+        <div className="select-header intro-stagger animate delay-1">
+          <h1 className="select-title">Stardrop</h1>
+          <p className="select-subtitle">Choose your experience</p>
+        </div>
+
+        <div className="select-options intro-stagger animate delay-2">
+          <button
+            className={`select-card${hovered === '1' ? ' hovered' : ''}`}
+            onClick={() => onSelect('/intro.mp4')}
+            onMouseEnter={() => setHovered('1')}
+            onMouseLeave={() => setHovered(null)}
+          >
+            <div className="select-preview">
+              <video
+                ref={vid1Ref}
+                src="/intro.mp4"
+                muted
+                loop
+                playsInline
+                preload="auto"
+              />
+            </div>
+            <span className="select-label">Animation 1</span>
+          </button>
+
+          <button
+            className={`select-card${hovered === '2' ? ' hovered' : ''}`}
+            onClick={() => onSelect('/intro2.mp4')}
+            onMouseEnter={() => setHovered('2')}
+            onMouseLeave={() => setHovered(null)}
+          >
+            <div className="select-preview">
+              <video
+                ref={vid2Ref}
+                src="/intro2.mp4"
+                muted
+                loop
+                playsInline
+                preload="auto"
+              />
+            </div>
+            <span className="select-label">Animation 2</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Intro Player ──
+interface IntroPlayerProps {
+  videoSrc: string;
   onNavigateToMain: () => void;
 }
 
-export default function IntroScene({ onNavigateToMain }: IntroSceneProps) {
+function IntroPlayer({ videoSrc, onNavigateToMain }: IntroPlayerProps) {
   const [completed, setCompleted] = useState(false);
   const [skipped, setSkipped] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
 
-  // Auto-play video on mount
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
 
-    const handleEnded = () => {
-      setCompleted(true);
-    };
+    const handleEnded = () => setCompleted(true);
 
     video.addEventListener('ended', handleEnded);
-    video.play().catch(() => {
-      // Autoplay may be blocked — that's ok, the video will still show first frame
-    });
+    video.play().catch(() => {});
 
     return () => {
       video.removeEventListener('ended', handleEnded);
@@ -35,51 +99,37 @@ export default function IntroScene({ onNavigateToMain }: IntroSceneProps) {
   const handleSkip = useCallback(() => {
     setSkipped(true);
     setCompleted(true);
-    if (videoRef.current) {
-      videoRef.current.pause();
-    }
+    videoRef.current?.pause();
   }, []);
 
   const toggleSound = useCallback(() => {
     const video = videoRef.current;
     if (!video) return;
-
-    if (soundEnabled) {
-      video.muted = true;
-      setSoundEnabled(false);
-    } else {
-      video.muted = false;
-      setSoundEnabled(true);
-    }
+    video.muted = soundEnabled;
+    setSoundEnabled(!soundEnabled);
   }, [soundEnabled]);
 
   const handleMainPage = useCallback(() => {
-    if (videoRef.current) {
-      videoRef.current.muted = true;
-    }
+    if (videoRef.current) videoRef.current.muted = true;
     onNavigateToMain();
   }, [onNavigateToMain]);
 
   const showFinalUI = completed || skipped;
-
   const anim = showFinalUI ? 'intro-stagger animate' : 'intro-stagger';
 
   return (
     <div className="intro-container">
-      {/* Video background — starts muted for autoplay, unmuted via sound toggle */}
       <video
         ref={videoRef}
         className="intro-video"
-        src="/intro.mp4"
+        src={videoSrc}
         muted
         playsInline
         preload="auto"
       />
 
-      {/* Dimming overlay — darkens the last frame so text is legible */}
       <div className={`intro-dim${showFinalUI ? ' visible' : ''}`} />
 
-      {/* Skip button */}
       {!showFinalUI && (
         <button className="intro-skip" onClick={handleSkip}>
           Skip
@@ -90,7 +140,6 @@ export default function IntroScene({ onNavigateToMain }: IntroSceneProps) {
         </button>
       )}
 
-      {/* Sound toggle */}
       <button className="intro-sound" onClick={toggleSound} aria-label={soundEnabled ? 'Mute' : 'Enable sound'}>
         {soundEnabled ? (
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -106,7 +155,6 @@ export default function IntroScene({ onNavigateToMain }: IntroSceneProps) {
         )}
       </button>
 
-      {/* Final UI overlay — staggered entrance when video ends or is skipped */}
       <div
         className="intro-final"
         style={{ pointerEvents: showFinalUI ? 'auto' : 'none' }}
@@ -145,4 +193,19 @@ export default function IntroScene({ onNavigateToMain }: IntroSceneProps) {
       </div>
     </div>
   );
+}
+
+// ── Main Export ──
+interface IntroSceneProps {
+  onNavigateToMain: () => void;
+}
+
+export default function IntroScene({ onNavigateToMain }: IntroSceneProps) {
+  const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
+
+  if (selectedVideo) {
+    return <IntroPlayer videoSrc={selectedVideo} onNavigateToMain={onNavigateToMain} />;
+  }
+
+  return <SelectionScreen onSelect={setSelectedVideo} />;
 }

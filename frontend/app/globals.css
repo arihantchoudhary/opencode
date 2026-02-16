@@ -394,6 +394,114 @@ body {
 }
 
 /* ═══════════════════════════════════════════ */
+/* SELECTION SCREEN                           */
+/* ═══════════════════════════════════════════ */
+
+.select-screen {
+  position: absolute;
+  inset: 0;
+  z-index: 15;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3rem;
+  padding: 2rem;
+  background: radial-gradient(
+    ellipse 70% 60% at 50% 50%,
+    rgba(10, 5, 20, 0.95) 0%,
+    #000 100%
+  );
+}
+
+.select-header {
+  text-align: center;
+}
+
+.select-title {
+  font-family: 'Cinzel', 'Cormorant Garamond', Georgia, serif;
+  font-size: clamp(1.2rem, 2.5vw, 1.8rem);
+  font-weight: 400;
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+  color: rgba(255, 235, 210, 0.9);
+  margin-bottom: 0.75rem;
+  text-shadow:
+    0 0 30px rgba(255, 220, 180, 0.25),
+    0 0 60px rgba(255, 200, 150, 0.08);
+}
+
+.select-subtitle {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: clamp(0.9rem, 1.5vw, 1.1rem);
+  font-weight: 300;
+  font-style: italic;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.select-options {
+  display: flex;
+  gap: 2rem;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.select-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.select-card:hover {
+  transform: scale(1.03);
+}
+
+.select-preview {
+  position: relative;
+  width: clamp(260px, 30vw, 400px);
+  aspect-ratio: 16 / 9;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: all 0.4s ease;
+}
+
+.select-card:hover .select-preview {
+  border-color: rgba(167, 139, 250, 0.4);
+  box-shadow:
+    0 0 30px rgba(139, 92, 246, 0.15),
+    0 0 60px rgba(139, 92, 246, 0.05);
+}
+
+.select-preview video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.select-label {
+  font-family: 'Cinzel', Georgia, serif;
+  font-size: 0.8rem;
+  font-weight: 400;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.45);
+  transition: color 0.3s ease;
+}
+
+.select-card:hover .select-label {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* ═══════════════════════════════════════════ */
 /* SHARED ANIMATIONS                          */
 /* ═══════════════════════════════════════════ */
 
