@@ -69,3 +69,18 @@ export function listUsers(limit = 50) {
 export function getDailyActivity() {
   return request<DailyActivity[]>("/users/stats/daily")
 }
+
+export type GitHubRepo = {
+  name: string
+  full_name: string
+  html_url: string
+  description: string | null
+  private: boolean
+  updated_at: string
+  owner: { login: string; avatar_url: string }
+  permissions: { admin: boolean; push: boolean; pull: boolean }
+}
+
+export function listConnectedRepos() {
+  return request<GitHubRepo[]>("/admin/repos")
+}

@@ -24,10 +24,12 @@ resource "aws_apprunner_service" "backend" {
           port          = "8000"
 
           runtime_environment_variables = {
-            DYNAMODB_TABLE_NAME = aws_dynamodb_table.users.name
-            AWS_REGION          = var.aws_region
-            ENVIRONMENT         = var.environment
-            CORS_ORIGINS        = var.cors_origins
+            DYNAMODB_TABLE_NAME    = aws_dynamodb_table.users.name
+            AWS_REGION             = var.aws_region
+            ENVIRONMENT            = var.environment
+            CORS_ORIGINS           = var.cors_origins
+            GITHUB_APP_ID          = var.github_app_id
+            GITHUB_APP_PRIVATE_KEY = var.github_app_private_key
           }
         }
       }

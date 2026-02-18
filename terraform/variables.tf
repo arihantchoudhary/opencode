@@ -34,3 +34,14 @@ variable "github_branch" {
   type    = string
   default = "dev"
 }
+
+variable "github_app_id" {
+  type        = string
+  description = "GitHub App ID for stardrop-agent"
+}
+
+variable "github_app_private_key" {
+  type        = string
+  sensitive   = true
+  description = "GitHub App private key for stardrop-agent"
+}

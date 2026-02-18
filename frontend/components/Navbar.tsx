@@ -26,6 +26,9 @@ export default function Navbar() {
               <Link href="/dashboard" className="text-sm text-zinc-400 transition-colors hover:text-white">
                 Dashboard
               </Link>
+              <Link href="/admin" className="text-sm text-zinc-400 transition-colors hover:text-white">
+                Admin
+              </Link>
               <span className="text-sm text-zinc-500">{user.name}</span>
               <button
                 onClick={logout}
