@@ -1,3 +1,4 @@
+import base64
 import time
 
 import jwt
@@ -19,7 +20,10 @@ def _generate_jwt() -> str:
         "exp": now + (10 * 60),
         "iss": settings.github_app_id,
     }
-    private_key = settings.github_app_private_key.replace("\\n", "\n")
+    raw = settings.github_app_private_key
+    if not raw.startswith("-----"):
+        raw = base64.b64decode(raw).decode()
+    private_key = raw.replace("\\n", "\n")
     return jwt.encode(payload, private_key, algorithm="RS256")
 
 
