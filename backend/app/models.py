@@ -35,3 +35,35 @@ class UserResponse(BaseModel):
     signup_source: str
     reference: Optional[str] = None
     last_login: Optional[str] = None
+
+
+class SessionReport(BaseModel):
+    session_id: str
+    user_id: str
+    user_email: str
+    user_name: str
+    title: str
+    project_id: str
+    directory: str
+    version: str
+    status: str
+    created_at: str
+    updated_at: str
+    completed_at: Optional[str] = None
+    summary: Optional[dict] = None
+
+
+class SessionResponse(BaseModel):
+    session_id: str
+    user_id: str
+    user_email: str
+    user_name: str
+    title: str
+    project_id: str
+    directory: str
+    version: str
+    status: str
+    created_at: str
+    updated_at: str
+    completed_at: Optional[str] = None
+    summary: Optional[dict] = None

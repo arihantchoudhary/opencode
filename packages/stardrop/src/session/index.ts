@@ -22,6 +22,7 @@ import { Snapshot } from "@/snapshot"
 import type { Provider } from "@/provider/provider"
 import { PermissionNext } from "@/permission/next"
 import { Global } from "@/global"
+import { SessionReporter } from "./reporter"
 
 export namespace Session {
   const log = Log.create({ service: "session" })
@@ -229,6 +230,7 @@ export namespace Session {
     Bus.publish(Event.Created, {
       info: result,
     })
+    SessionReporter.report(result, "active").catch(() => {})
     const cfg = await Config.get()
     if (!result.parentID && (Flag.STARDROP_AUTO_SHARE || cfg.share === "auto"))
       share(result.id)
@@ -305,6 +307,9 @@ export namespace Session {
     Bus.publish(Event.Updated, {
       info: result,
     })
+    if (result.time.archived || result.summary) {
+      SessionReporter.report(result, "completed").catch(() => {})
+    }
     return result
   }
 

@@ -84,3 +84,27 @@ export type GitHubRepo = {
 export function listConnectedRepos() {
   return request<GitHubRepo[]>("/admin/repos")
 }
+
+export type Session = {
+  session_id: string
+  user_id: string
+  user_email: string
+  user_name: string
+  title: string
+  project_id: string
+  directory: string
+  version: string
+  status: string
+  created_at: string
+  updated_at: string
+  completed_at: string | null
+  summary: {
+    additions: number
+    deletions: number
+    files: number
+  } | null
+}
+
+export function listSessions(limit = 100) {
+  return request<Session[]>(`/sessions/?limit=${limit}`)
+}

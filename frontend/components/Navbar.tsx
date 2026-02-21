@@ -29,6 +29,9 @@ export default function Navbar() {
               <Link href="/admin" className="text-sm text-zinc-400 transition-colors hover:text-white">
                 Admin
               </Link>
+              <Link href="/admin/sessions" className="text-sm text-zinc-400 transition-colors hover:text-white">
+                Sessions
+              </Link>
               <span className="text-sm text-zinc-500">{user.name}</span>
               <button
                 onClick={logout}
