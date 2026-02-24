@@ -1,0 +1,15 @@
+{
+  "expo": {
+    "name": "Stardrop",
+    "slug": "stardrop",
+    "version": "0.1.0",
+    "scheme": "stardrop",
+    "platforms": ["ios", "android"],
+    "ios": {
+      "bundleIdentifier": "com.stardrop.app"
+    },
+    "android": {
+      "package": "com.stardrop.app"
+    }
+  }
+}

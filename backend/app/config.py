@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     cors_origins: str = "http://localhost:3000"
     github_app_id: str = ""
     github_app_private_key: str = ""
+    twitter_bearer_token: str = ""
 
     class Config:
         env_file = ".env"

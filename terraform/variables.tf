@@ -45,3 +45,9 @@ variable "github_app_private_key" {
   sensitive   = true
   description = "GitHub App private key for stardrop-agent"
 }
+
+variable "twitter_bearer_token" {
+  type        = string
+  sensitive   = true
+  description = "Twitter API v2 Bearer Token for @Stardropper mentions"
+}

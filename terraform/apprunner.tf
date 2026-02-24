@@ -31,6 +31,7 @@ resource "aws_apprunner_service" "backend" {
             CORS_ORIGINS                 = var.cors_origins
             GITHUB_APP_ID                = var.github_app_id
             GITHUB_APP_PRIVATE_KEY       = var.github_app_private_key
+            TWITTER_BEARER_TOKEN         = var.twitter_bearer_token
           }
         }
       }
