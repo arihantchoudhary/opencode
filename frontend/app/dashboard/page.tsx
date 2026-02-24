@@ -133,33 +133,35 @@ export default function Home() {
   // Load twitter_handle from backend when logged in
   useEffect(() => {
     if (!clerkUser?.id) return;
+    console.log("[Stardrop] Fetching user settings for clerk_id:", clerkUser.id);
     fetch(`${API_BASE}/api/users/by-clerk/${clerkUser.id}`)
-      .then((r) => {
-        if (!r.ok) return null;
-        return r.json();
-      })
+      .then((r) => r.json())
       .then((data) => {
+        console.log("[Stardrop] User settings loaded:", data);
         if (data?.twitter_handle) {
           setMyHandle(data.twitter_handle);
           setMyHandleInput(data.twitter_handle);
         }
       })
-      .catch(() => {});
+      .catch((err) => console.error("[Stardrop] Failed to load user settings:", err));
   }, [clerkUser?.id]);
 
   async function saveMyHandle() {
     const trimmed = myHandleInput.trim().replace(/^@/, "");
     if (!trimmed || !clerkUser?.id) return;
     setSavingHandle(true);
+    console.log("[Stardrop] Saving twitter handle:", trimmed);
     try {
-      await fetch(`${API_BASE}/api/users/by-clerk/${clerkUser.id}`, {
+      const res = await fetch(`${API_BASE}/api/users/by-clerk/${clerkUser.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ twitter_handle: trimmed }),
       });
+      const data = await res.json();
+      console.log("[Stardrop] Handle saved:", data);
       setMyHandle(trimmed);
-    } catch {
-      // fallback to local only
+    } catch (err) {
+      console.error("[Stardrop] Failed to save handle:", err);
       setMyHandle(trimmed);
     } finally {
       setSavingHandle(false);
@@ -169,31 +171,29 @@ export default function Home() {
   const fetchData = useCallback(async (user: string, forceRefresh = false) => {
     setLoading(true);
     setError(null);
+    console.log("[Stardrop] Fetching dashboard for @" + user, forceRefresh ? "(force refresh)" : "");
     try {
       if (forceRefresh) {
+        console.log("[Stardrop] Force refreshing cache...");
         await fetch(`${API_BASE}/api/twitter/refresh/${user}`, { method: "POST" }).catch(() => {});
       }
-      const [mentionsRes, profileRes] = await Promise.allSettled([
-        fetch(`${API_BASE}/api/twitter/mentions/${user}`).then(async (r) => {
-          if (!r.ok) {
-            if (r.status === 404) throw new Error(`Twitter user @${user} not found. Check the username.`);
-            if (r.status === 429) throw new Error("Twitter rate limit hit. Try again in a few minutes.");
-            const body = await r.json().catch(() => null);
-            throw new Error(body?.detail || `Error ${r.status}`);
-          }
-          return r.json() as Promise<MentionsResponse>;
-        }),
-        fetch(`${API_BASE}/api/twitter/profile/${user}`).then((r) => {
-          if (!r.ok) return null;
-          return r.json() as Promise<ProfileData>;
-        }),
-      ]);
-
-      if (mentionsRes.status === "fulfilled") setMentions(mentionsRes.value);
-      else setError(mentionsRes.reason?.message || "Failed to fetch mentions");
-
-      if (profileRes.status === "fulfilled" && profileRes.value) setProfile(profileRes.value);
+      const res = await fetch(`${API_BASE}/api/twitter/dashboard/${user}`);
+      if (!res.ok) {
+        if (res.status === 404) throw new Error(`Twitter user @${user} not found. Check the username.`);
+        if (res.status === 429) throw new Error("Twitter rate limit hit. Try again in a few minutes.");
+        const body = await res.json().catch(() => null);
+        throw new Error(body?.detail || `Error ${res.status}`);
+      }
+      const data = await res.json();
+      console.log("[Stardrop] Dashboard data received:", {
+        profile: data.profile?.username,
+        tweets: data.mentions?.data?.length || 0,
+        stats: data.stats,
+      });
+      if (data.mentions) setMentions(data.mentions);
+      if (data.profile) setProfile(data.profile);
     } catch (err) {
+      console.error("[Stardrop] Dashboard fetch error:", err);
       setError(err instanceof Error ? err.message : "Failed to fetch");
     } finally {
       setLoading(false);

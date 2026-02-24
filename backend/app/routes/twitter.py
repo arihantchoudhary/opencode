@@ -203,3 +203,49 @@ def refresh_mentions(username: str):
     """Force refresh mentions from Twitter API (use sparingly)."""
     data = _fetch_from_twitter(username)
     return {"status": "refreshed", "result_count": data.get("meta", {}).get("result_count", 0)}
+
+
+@router.get("/dashboard/{username}")
+def get_dashboard(username: str):
+    """
+    Single endpoint that returns all data needed for the dashboard:
+    profile, mentions, and computed stats — all in one JSON response.
+    """
+    # Get profile
+    profile = _get_cached_profile(username)
+    if not profile:
+        try:
+            _resolve_user_id(username)
+            profile = _get_cached_profile(username)
+        except Exception:
+            profile = None
+
+    # Get mentions (from cache or Twitter)
+    cached_data, is_fresh = _get_cache(username)
+    mentions = None
+    if is_fresh and cached_data:
+        mentions = cached_data
+    else:
+        try:
+            mentions = _fetch_from_twitter(username)
+        except Exception:
+            mentions = cached_data  # fall back to stale cache
+
+    # Compute stats
+    tweets = mentions.get("data", []) if mentions else []
+    total_likes = sum(t.get("public_metrics", {}).get("like_count", 0) for t in tweets)
+    total_reposts = sum(t.get("public_metrics", {}).get("retweet_count", 0) for t in tweets)
+    total_replies = sum(t.get("public_metrics", {}).get("reply_count", 0) for t in tweets)
+    total_impressions = sum(t.get("public_metrics", {}).get("impression_count", 0) for t in tweets)
+
+    return {
+        "profile": profile,
+        "mentions": mentions,
+        "stats": {
+            "mention_count": len(tweets),
+            "total_likes": total_likes,
+            "total_reposts": total_reposts,
+            "total_replies": total_replies,
+            "total_impressions": total_impressions,
+        },
+    }

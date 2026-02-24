@@ -63,7 +63,14 @@ def update(user_id: str, body: UserUpdate):
 def get_by_clerk(clerk_id: str):
     user = db.get_user_by_clerk_id(clerk_id)
     if not user:
-        raise HTTPException(404, "User not found")
+        # Auto-create user on first access so frontend never gets a 404
+        user = db.create_user({
+            "clerk_id": clerk_id,
+            "email": "",
+            "name": "",
+            "auth_provider": "clerk",
+            "signup_source": "web",
+        })
     return user
 
 
@@ -71,10 +78,17 @@ def get_by_clerk(clerk_id: str):
 def update_by_clerk(clerk_id: str, body: UserUpdate):
     user = db.get_user_by_clerk_id(clerk_id)
     if not user:
-        raise HTTPException(404, "User not found")
+        # Auto-create then update
+        user = db.create_user({
+            "clerk_id": clerk_id,
+            "email": "",
+            "name": "",
+            "auth_provider": "clerk",
+            "signup_source": "web",
+        })
     updated = db.update_user(user["user_id"], body.model_dump(exclude_unset=True))
     if not updated:
-        raise HTTPException(404, "User not found")
+        raise HTTPException(500, "Failed to update user")
     return updated
 
 
