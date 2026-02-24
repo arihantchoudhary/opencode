@@ -300,6 +300,175 @@ These tickets required the most attempts, revealing where requirements were ambi
 
 ---
 
+## Twitter Mentions Dashboard
+
+A full-stack app that tracks tweets mentioning a Twitter account (e.g., `@stardroplin`), lets you filter to only your own tweets, dismiss irrelevant ones, and view engagement stats — across web and mobile.
+
+### Architecture
+
+```
+┌─────────────────┐     ┌──────────────────┐     ┌─────────────────────┐
+│   Next.js App   │────▶│  FastAPI Backend  │────▶│   Twitter API v2    │
+│   (Vercel)      │     │  (App Runner)     │     │   (Bearer Token)    │
+└────────┬────────┘     └────────┬─────────┘     └─────────────────────┘
+         │                       │
+         │                       ▼
+         │              ┌──────────────────┐
+         │              │    DynamoDB       │
+         │              │  ┌────────────┐  │
+         │              │  │ users      │  │  ← user_id, clerk_id, twitter_handle
+         │              │  │ tweets     │  │  ← cached mentions (15-min TTL)
+         │              │  │ sessions   │  │  ← agent sessions
+         │              │  └────────────┘  │
+         │              └──────────────────┘
+         │
+    ┌────┴────┐
+    │  Clerk  │  ← Authentication (web + mobile)
+    └─────────┘
+
+┌─────────────────┐
+│  Expo Mobile    │────▶ Same FastAPI backend
+│  (iOS/Android)  │
+└─────────────────┘
+```
+
+### How It Works (Full Flow)
+
+**1. User signs up / signs in via Clerk**
+
+- Web: `@clerk/nextjs` middleware protects `/dashboard`
+- Mobile: `@clerk/clerk-expo` with SecureStore token caching
+- On sign-up, Clerk fires a webhook → `POST /api/webhook/clerk` → creates user in DynamoDB
+- On first access, if webhook missed, backend auto-creates user via `GET /api/users/by-clerk/{clerk_id}`
+
+**2. User sets their Twitter handle**
+
+- Settings page (web) or Profile tab (mobile) → saves `twitter_handle` to DynamoDB
+- `PATCH /api/users/by-clerk/{clerk_id}` with `{ twitter_handle: "username" }`
+
+**3. Dashboard loads mentions**
+
+- Frontend calls `GET /api/twitter/dashboard/{username}` (single endpoint)
+- Falls back to separate `GET /api/twitter/mentions/{username}` + `GET /api/twitter/profile/{username}` if dashboard endpoint is unavailable
+- Backend flow:
+  1. Check DynamoDB cache (`{username}_mentions` key)
+  2. If cache is fresh (< 15 min), return cached data
+  3. Otherwise, resolve user ID (cached in `{username}_user_id` key or via Twitter `GET /users/by/username`)
+  4. Fetch mentions from Twitter `GET /users/{id}/mentions` with expansions
+  5. Cache response in DynamoDB, return to frontend
+
+**4. Frontend renders and filters**
+
+- **My Tweets mode**: filters by `author_id` matching the user's Twitter handle
+- **All Mentions mode**: shows every tweet mentioning the tracked account
+- **Text search**: filters tweets by content
+- **Dismiss**: removes individual tweets from view (stored in localStorage)
+- **Force Refresh**: `POST /api/twitter/refresh/{username}` bypasses cache
+
+**5. Stats computed from mentions data**
+
+- Total mentions, likes, reposts, replies, impressions
+- Dashboard endpoint returns pre-computed stats in the response
+
+### API Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/twitter/dashboard/{username}` | All-in-one: profile + mentions + stats |
+| `GET` | `/api/twitter/mentions/{username}` | Cached mentions (calls Twitter if stale) |
+| `GET` | `/api/twitter/profile/{username}` | Cached user profile |
+| `POST` | `/api/twitter/refresh/{username}` | Force refresh from Twitter API |
+| `GET` | `/api/users/by-clerk/{clerk_id}` | Get user by Clerk ID (auto-creates) |
+| `PATCH` | `/api/users/by-clerk/{clerk_id}` | Update user (e.g., twitter_handle) |
+| `POST` | `/api/users` | Create user |
+| `GET` | `/health` | Health check |
+
+### DynamoDB Tables
+
+| Table | Key | Purpose |
+|-------|-----|---------|
+| `stardrop-users-dev` | `user_id` (GSI: `email`) | User accounts with clerk_id, twitter_handle |
+| `stardrop-tweets-dev` | `cache_key` | Twitter API cache (`{user}_mentions`, `{user}_user_id`) |
+| `stardrop-sessions-dev` | `session_id` (GSI: `user_id`) | Agent sessions |
+
+### Infrastructure (Terraform)
+
+All AWS resources defined in `terraform/`:
+
+- **App Runner** — Deploys `backend/` from GitHub (auto-deploy on push to `dev`)
+- **DynamoDB** — 3 tables, PAY_PER_REQUEST billing
+- **IAM** — Instance role with DynamoDB access
+
+### Project Structure
+
+```
+frontend/              # Next.js 16 + shadcn/ui + Tailwind v4
+├── app/
+│   ├── dashboard/     # Main dashboard (sidebar, mentions, analytics, settings)
+│   ├── api/webhook/   # Clerk webhook handler
+│   └── sign-in/       # Clerk sign-in page
+│
+backend/               # Python FastAPI
+├── app/
+│   ├── routes/
+│   │   ├── twitter.py # Twitter API integration + caching
+│   │   ├── users.py   # User CRUD + clerk lookup
+│   │   ├── admin.py   # Admin endpoints
+│   │   └── health.py  # Health check
+│   ├── db.py          # DynamoDB operations
+│   ├── models.py      # Pydantic models
+│   └── config.py      # Settings (env vars)
+│
+mobile/                # Expo (React Native)
+├── app/
+│   ├── (tabs)/
+│   │   ├── index.tsx      # Dashboard tab
+│   │   ├── mentions.tsx   # Mentions tab
+│   │   └── profile.tsx    # Profile + twitter handle
+│   ├── sign-in.tsx        # Clerk sign-in
+│   └── _layout.tsx        # Root layout + ClerkProvider
+├── lib/
+│   ├── api.ts         # API helpers
+│   ├── types.ts       # Shared types
+│   └── tokenCache.ts  # SecureStore token cache
+│
+terraform/             # Infrastructure as Code
+├── apprunner.tf       # App Runner service
+├── dynamodb.tf        # 3 DynamoDB tables
+├── iam.tf             # IAM roles/policies
+├── variables.tf       # Input variables
+└── outputs.tf         # Output values
+```
+
+### Environment Variables
+
+**Frontend (Vercel)**:
+- `NEXT_PUBLIC_API_URL` — Backend URL (App Runner)
+- `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` — Clerk publishable key
+- `CLERK_SECRET_KEY` — Clerk secret key
+
+**Backend (App Runner)**:
+- `TWITTER_BEARER_TOKEN` — Twitter API v2 bearer token
+- `DYNAMODB_TABLE_NAME` — Users table name
+- `DYNAMODB_TWEETS_TABLE_NAME` — Tweets cache table name
+- `DYNAMODB_SESSIONS_TABLE_NAME` — Sessions table name
+- `AWS_REGION` — AWS region (us-east-1)
+- `CORS_ORIGINS` — Allowed origins (comma-separated)
+- `GITHUB_APP_ID` / `GITHUB_APP_PRIVATE_KEY` — GitHub App credentials
+
+**Mobile (Expo)**:
+- `EXPO_PUBLIC_API_URL` — Backend URL
+- `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` — Clerk publishable key
+
+### Deployment
+
+- **Frontend**: Push to `dev` → Vercel auto-deploys
+- **Backend**: Push to `dev` → App Runner auto-deploys from `backend/` directory
+- **Infrastructure**: `cd terraform && terraform apply`
+- **Mobile**: `cd mobile && npx expo start` (dev) or `eas build` (production)
+
+---
+
 ## Tech Stack
 
 - **Runtime**: Bun
