@@ -174,8 +174,13 @@ export default function Home() {
         await fetch(`${API_BASE}/api/twitter/refresh/${user}`, { method: "POST" }).catch(() => {});
       }
       const [mentionsRes, profileRes] = await Promise.allSettled([
-        fetch(`${API_BASE}/api/twitter/mentions/${user}`).then((r) => {
-          if (!r.ok) throw new Error(`${r.status}`);
+        fetch(`${API_BASE}/api/twitter/mentions/${user}`).then(async (r) => {
+          if (!r.ok) {
+            if (r.status === 404) throw new Error(`Twitter user @${user} not found. Check the username.`);
+            if (r.status === 429) throw new Error("Twitter rate limit hit. Try again in a few minutes.");
+            const body = await r.json().catch(() => null);
+            throw new Error(body?.detail || `Error ${r.status}`);
+          }
           return r.json() as Promise<MentionsResponse>;
         }),
         fetch(`${API_BASE}/api/twitter/profile/${user}`).then((r) => {
