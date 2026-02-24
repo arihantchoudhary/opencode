@@ -4,6 +4,7 @@ import time
 import jwt
 import requests
 from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel
 
 from app.config import settings
 
@@ -101,3 +102,47 @@ def list_connected_repos():
 
     all_repos.sort(key=lambda r: r["updated_at"], reverse=True)
     return all_repos
+
+
+class CreateRepoRequest(BaseModel):
+    name: str
+    description: str = ""
+
+
+@router.post("/create-repo")
+def create_repo(body: CreateRepoRequest):
+    """Create a new GitHub repository via the Stardrop GitHub App."""
+    if not settings.github_app_id or not settings.github_app_private_key:
+        raise HTTPException(status_code=500, detail="GitHub App credentials not configured")
+
+    installation_tokens = _get_installation_tokens()
+    if not installation_tokens:
+        raise HTTPException(status_code=500, detail="No GitHub App installations found")
+
+    inst = installation_tokens[0]
+    headers = {
+        "Authorization": f"token {inst['token']}",
+        "Accept": "application/vnd.github+json",
+    }
+
+    resp = requests.post(
+        f"{GITHUB_API}/user/repos",
+        headers=headers,
+        json={
+            "name": body.name,
+            "description": body.description,
+            "private": False,
+            "auto_init": True,
+        },
+    )
+
+    if resp.status_code not in (200, 201):
+        detail = resp.json().get("message", "Failed to create repository")
+        raise HTTPException(status_code=resp.status_code, detail=detail)
+
+    repo = resp.json()
+    return {
+        "html_url": repo["html_url"],
+        "full_name": repo["full_name"],
+        "name": repo["name"],
+    }

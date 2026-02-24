@@ -15,9 +15,9 @@ import {
   Settings,
   TrendingUp,
   X,
-  ChevronDown,
-  ChevronUp,
   ExternalLink,
+  Github,
+  BarChart2,
 } from "lucide-react";
 import {
   SidebarProvider,
@@ -295,6 +295,8 @@ export default function Home() {
   const [expandedTweetId, setExpandedTweetId] = useState<string | null>(null);
   const [threadData, setThreadData] = useState<ThreadData | null>(null);
   const [threadLoading, setThreadLoading] = useState(false);
+  const [creatingRepo, setCreatingRepo] = useState<string | null>(null);
+  const [createdRepoUrl, setCreatedRepoUrl] = useState<Record<string, string>>({});
 
   function dismissTweet(id: string) {
     setDismissedIds((prev) => {
@@ -334,6 +336,28 @@ export default function Home() {
       console.error("[Stardrop] Failed to load thread:", err);
     } finally {
       setThreadLoading(false);
+    }
+  }
+
+  async function createRepo(tweetText: string, tweetId: string) {
+    setCreatingRepo(tweetId);
+    try {
+      const name = tweetText.slice(0, 50).replace(/[^a-zA-Z0-9-]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "") || "new-repo";
+      const res = await fetch(`${API_BASE}/admin/create-repo`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, description: tweetText.slice(0, 200) }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => null);
+        throw new Error(err?.detail || "Failed to create repo");
+      }
+      const data = await res.json();
+      setCreatedRepoUrl((prev) => ({ ...prev, [tweetId]: data.html_url }));
+    } catch (err) {
+      console.error("[Stardrop] Failed to create repo:", err);
+    } finally {
+      setCreatingRepo(null);
     }
   }
 
@@ -657,9 +681,6 @@ export default function Home() {
                   {!loading && filteredTweets?.slice(0, 5).map((tweet, i) => {
                     const user = getUser(tweet.author_id);
                     const isExpanded = expandedTweetId === tweet.id;
-                    const parentRef = tweet.referenced_tweets?.find((r) => r.type === "replied_to");
-                    const parentTweet = parentRef ? getReferencedTweet(parentRef.id) : undefined;
-                    const parentUser = parentTweet ? getUser(parentTweet.author_id) : undefined;
                     const hasThread = tweet.conversation_id && tweet.conversation_id !== tweet.id;
                     return (
                       <div key={tweet.id}>
@@ -668,85 +689,97 @@ export default function Home() {
                           className={`p-4 hover:bg-muted/50 transition-colors cursor-pointer ${isExpanded ? "bg-muted/30" : ""}`}
                           onClick={() => { setExpandedTweetId(isExpanded ? null : tweet.id); if (!isExpanded) setThreadData(null); }}
                         >
-                          <div className="flex gap-3 group">
-                            <Avatar className="h-9 w-9 shrink-0">
-                              <AvatarImage src={user?.profile_image_url} />
-                              <AvatarFallback className="text-xs">{user?.name?.charAt(0)?.toUpperCase() || "?"}</AvatarFallback>
-                            </Avatar>
+                          <div className="flex gap-3">
+                            <div className="flex flex-col items-center">
+                              <Avatar className="h-10 w-10 shrink-0">
+                                <AvatarImage src={user?.profile_image_url} />
+                                <AvatarFallback className="text-xs">{user?.name?.charAt(0)?.toUpperCase() || "?"}</AvatarFallback>
+                              </Avatar>
+                              {hasThread && <div className="w-0.5 flex-1 bg-border mt-1 rounded-full" />}
+                            </div>
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-1.5">
-                                <span className="font-medium text-sm">{user?.name || "Unknown"}</span>
+                                <span className="font-semibold text-sm">{user?.name || "Unknown"}</span>
                                 <span className="text-muted-foreground text-sm">@{user?.username || "unknown"}</span>
-                                <span className="text-muted-foreground text-xs">· {formatDate(tweet.created_at)}</span>
-                                {hasThread && <Badge variant="secondary" className="text-[10px] px-1 py-0 h-4 ml-1">Thread</Badge>}
-                                <span className="ml-auto">{isExpanded ? <ChevronUp className="h-3.5 w-3.5 text-muted-foreground" /> : <ChevronDown className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100" />}</span>
+                                <span className="text-muted-foreground text-sm">· {formatDate(tweet.created_at)}</span>
                               </div>
-                              <p className={`text-sm mt-1 leading-relaxed whitespace-pre-wrap break-words ${isExpanded ? "" : "line-clamp-2"}`}>
+                              <p className={`text-sm mt-0.5 leading-relaxed whitespace-pre-wrap break-words ${isExpanded ? "" : "line-clamp-3"}`}>
                                 {tweet.text}
                               </p>
-                              {tweet.public_metrics && (
-                                <div className="flex gap-4 mt-2 text-xs text-muted-foreground">
-                                  <span className="flex items-center gap-1"><MessageCircle className="h-3 w-3" />{tweet.public_metrics.reply_count}</span>
-                                  <span className="flex items-center gap-1"><Repeat2 className="h-3 w-3" />{tweet.public_metrics.retweet_count}</span>
-                                  <span className="flex items-center gap-1"><Heart className="h-3 w-3" />{tweet.public_metrics.like_count}</span>
-                                </div>
-                              )}
+                              {/* Twitter-style action bar */}
+                              <div className="flex justify-between mt-2 max-w-md -ml-1.5">
+                                <button className="group/reply flex items-center gap-0.5 text-xs text-muted-foreground transition-colors hover:text-blue-500" onClick={(e) => e.stopPropagation()}>
+                                  <div className="p-1.5 rounded-full transition-colors group-hover/reply:bg-blue-500/10"><MessageCircle className="h-4 w-4" /></div>
+                                  {tweet.public_metrics?.reply_count ? <span>{tweet.public_metrics.reply_count}</span> : null}
+                                </button>
+                                <button className="group/repost flex items-center gap-0.5 text-xs text-muted-foreground transition-colors hover:text-green-500" onClick={(e) => e.stopPropagation()}>
+                                  <div className="p-1.5 rounded-full transition-colors group-hover/repost:bg-green-500/10"><Repeat2 className="h-4 w-4" /></div>
+                                  {tweet.public_metrics?.retweet_count ? <span>{tweet.public_metrics.retweet_count}</span> : null}
+                                </button>
+                                <button className="group/like flex items-center gap-0.5 text-xs text-muted-foreground transition-colors hover:text-pink-500" onClick={(e) => e.stopPropagation()}>
+                                  <div className="p-1.5 rounded-full transition-colors group-hover/like:bg-pink-500/10"><Heart className="h-4 w-4" /></div>
+                                  {tweet.public_metrics?.like_count ? <span>{tweet.public_metrics.like_count}</span> : null}
+                                </button>
+                                <button className="group/views flex items-center gap-0.5 text-xs text-muted-foreground transition-colors hover:text-blue-500" onClick={(e) => e.stopPropagation()}>
+                                  <div className="p-1.5 rounded-full transition-colors group-hover/views:bg-blue-500/10"><BarChart2 className="h-4 w-4" /></div>
+                                  {tweet.public_metrics?.impression_count ? <span>{formatNumber(tweet.public_metrics.impression_count)}</span> : null}
+                                </button>
+                              </div>
                             </div>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 text-muted-foreground hover:text-destructive"
-                              onClick={(e) => { e.stopPropagation(); dismissTweet(tweet.id); }}
-                              title="Remove from feed"
-                            >
-                              <X className="h-3.5 w-3.5" />
-                            </Button>
                           </div>
                           {isExpanded && (
-                            <div className="mt-3 ml-12 space-y-3">
-                              {parentTweet && (
-                                <div className="flex gap-2 p-3 rounded-lg bg-muted/40 border border-border/50">
-                                  <div className="w-0.5 bg-muted-foreground/20 rounded-full shrink-0" />
-                                  <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-1.5">
-                                      <Avatar className="h-5 w-5"><AvatarImage src={parentUser?.profile_image_url} /><AvatarFallback className="text-[9px]">{parentUser?.name?.charAt(0)?.toUpperCase() || "?"}</AvatarFallback></Avatar>
-                                      <span className="font-medium text-xs">{parentUser?.name || "Unknown"}</span>
-                                      <span className="text-muted-foreground text-xs">@{parentUser?.username || "unknown"}</span>
-                                    </div>
-                                    <p className="text-xs mt-1 leading-relaxed whitespace-pre-wrap text-muted-foreground">{parentTweet.text}</p>
-                                  </div>
-                                </div>
-                              )}
-                              {!parentTweet && parentRef && (
-                                <p className="text-xs text-muted-foreground italic">Replying to a tweet (original unavailable)</p>
-                              )}
+                            <div className="mt-3 ml-[52px] space-y-3">
                               {hasThread && (!threadData || threadData.conversation_id !== tweet.conversation_id) && (
                                 <Button variant="outline" size="sm" disabled={threadLoading} onClick={(e) => { e.stopPropagation(); loadThread(tweet.conversation_id!); }}>
-                                  {threadLoading ? <><RefreshCw className="h-3.5 w-3.5 mr-1.5 animate-spin" />Loading thread...</> : <><MessageCircle className="h-3.5 w-3.5 mr-1.5" />Load full thread</>}
+                                  {threadLoading ? <><RefreshCw className="h-3.5 w-3.5 mr-1.5 animate-spin" />Loading thread...</> : <><MessageCircle className="h-3.5 w-3.5 mr-1.5" />Load conversation</>}
                                 </Button>
                               )}
-                              {threadData && threadData.conversation_id === tweet.conversation_id && (
-                                <div className="space-y-1">
-                                  <Badge variant="secondary" className="text-xs mb-2">{threadData.data.length} tweets in thread</Badge>
-                                  {threadData.data.map((t) => {
-                                    const tu = getUserFromThread(t.author_id) || getUser(t.author_id);
-                                    return (
-                                      <div key={t.id} className={`flex gap-2 p-2.5 rounded-lg border text-sm ${t.id === tweet.id ? "bg-primary/5 border-primary/30" : "border-border/50"}`}>
-                                        <Avatar className="h-6 w-6 shrink-0"><AvatarImage src={tu?.profile_image_url} /><AvatarFallback className="text-[9px]">{tu?.name?.charAt(0)?.toUpperCase() || "?"}</AvatarFallback></Avatar>
-                                        <div className="flex-1 min-w-0">
-                                          <div className="flex items-center gap-1 text-xs"><span className="font-medium">{tu?.name || "Unknown"}</span><span className="text-muted-foreground">@{tu?.username}</span><span className="text-muted-foreground">· {formatDate(t.created_at)}</span></div>
-                                          <p className="text-xs mt-0.5 leading-relaxed whitespace-pre-wrap break-words">{t.text}</p>
+                              {threadData && threadData.conversation_id === tweet.conversation_id && (() => {
+                                const contextTweets = threadData.data
+                                  .filter((t) => new Date(t.created_at).getTime() < new Date(tweet.created_at).getTime() && t.id !== tweet.id)
+                                  .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+                                return contextTweets.length > 0 ? (
+                                  <div>
+                                    <p className="text-xs text-muted-foreground mb-2">Conversation context</p>
+                                    {contextTweets.map((t, idx) => {
+                                      const tu = getUserFromThread(t.author_id) || getUser(t.author_id);
+                                      return (
+                                        <div key={t.id} className="flex gap-2">
+                                          <div className="flex flex-col items-center">
+                                            <Avatar className="h-6 w-6 shrink-0"><AvatarImage src={tu?.profile_image_url} /><AvatarFallback className="text-[9px]">{tu?.name?.charAt(0)?.toUpperCase() || "?"}</AvatarFallback></Avatar>
+                                            {idx < contextTweets.length - 1 && <div className="w-0.5 flex-1 bg-border mt-0.5 rounded-full" />}
+                                          </div>
+                                          <div className="flex-1 min-w-0 pb-3">
+                                            <div className="flex items-center gap-1 text-xs">
+                                              <span className="font-medium">{tu?.name || "Unknown"}</span>
+                                              <span className="text-muted-foreground">@{tu?.username}</span>
+                                              <span className="text-muted-foreground">· {formatDate(t.created_at)}</span>
+                                            </div>
+                                            <p className="text-xs mt-0.5 leading-relaxed whitespace-pre-wrap break-words">{t.text}</p>
+                                          </div>
                                         </div>
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                              )}
-                              <div className="flex items-center gap-2 pt-1">
+                                      );
+                                    })}
+                                  </div>
+                                ) : null;
+                              })()}
+                              <div className="flex items-center gap-2 flex-wrap pt-1">
                                 <Button variant="outline" size="sm" asChild onClick={(e) => e.stopPropagation()}>
                                   <a href={`https://x.com/${user?.username || "x"}/status/${tweet.id}`} target="_blank" rel="noopener noreferrer">
                                     <ExternalLink className="h-3.5 w-3.5 mr-1.5" />View on Twitter
                                   </a>
+                                </Button>
+                                <Button variant="outline" size="sm" disabled={creatingRepo === tweet.id} onClick={(e) => { e.stopPropagation(); createRepo(tweet.text, tweet.id); }}>
+                                  <Github className="h-3.5 w-3.5 mr-1.5" />
+                                  {creatingRepo === tweet.id ? "Creating..." : "Create GitHub Repo"}
+                                </Button>
+                                {createdRepoUrl[tweet.id] && (
+                                  <a href={createdRepoUrl[tweet.id]} target="_blank" rel="noopener noreferrer" className="text-xs text-green-600 hover:underline" onClick={(e) => e.stopPropagation()}>
+                                    Repo created ↗
+                                  </a>
+                                )}
+                                <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-destructive ml-auto" onClick={(e) => { e.stopPropagation(); dismissTweet(tweet.id); }}>
+                                  <X className="h-3.5 w-3.5 mr-1" />Dismiss
                                 </Button>
                               </div>
                             </div>
@@ -804,9 +837,6 @@ export default function Home() {
                 {!loading && filteredTweets?.map((tweet, i) => {
                   const user = getUser(tweet.author_id);
                   const isExpanded = expandedTweetId === tweet.id;
-                  const parentRef = tweet.referenced_tweets?.find((r) => r.type === "replied_to");
-                  const parentTweet = parentRef ? getReferencedTweet(parentRef.id) : undefined;
-                  const parentUser = parentTweet ? getUser(parentTweet.author_id) : undefined;
                   const hasThread = tweet.conversation_id && tweet.conversation_id !== tweet.id;
                   return (
                     <div key={tweet.id}>
@@ -815,84 +845,96 @@ export default function Home() {
                         className={`p-4 hover:bg-muted/50 transition-colors cursor-pointer ${isExpanded ? "bg-muted/30" : ""}`}
                         onClick={() => { setExpandedTweetId(isExpanded ? null : tweet.id); if (!isExpanded) setThreadData(null); }}
                       >
-                        <div className="flex gap-3 group">
-                          <Avatar className="h-10 w-10 shrink-0">
-                            <AvatarImage src={user?.profile_image_url} />
-                            <AvatarFallback>{user?.name?.charAt(0)?.toUpperCase() || "?"}</AvatarFallback>
-                          </Avatar>
+                        <div className="flex gap-3">
+                          <div className="flex flex-col items-center">
+                            <Avatar className="h-10 w-10 shrink-0">
+                              <AvatarImage src={user?.profile_image_url} />
+                              <AvatarFallback>{user?.name?.charAt(0)?.toUpperCase() || "?"}</AvatarFallback>
+                            </Avatar>
+                            {hasThread && <div className="w-0.5 flex-1 bg-border mt-1 rounded-full" />}
+                          </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-1.5 flex-wrap">
-                              <span className="font-medium text-sm">{user?.name || "Unknown"}</span>
+                              <span className="font-semibold text-sm">{user?.name || "Unknown"}</span>
                               {user?.verified && <Badge variant="secondary" className="text-[10px] px-1 py-0 h-4">Verified</Badge>}
                               <span className="text-muted-foreground text-sm">@{user?.username || "unknown"}</span>
-                              <span className="text-muted-foreground text-xs">· {formatDate(tweet.created_at)}</span>
-                              {hasThread && <Badge variant="secondary" className="text-[10px] px-1 py-0 h-4 ml-1">Thread</Badge>}
-                              <span className="ml-auto">{isExpanded ? <ChevronUp className="h-3.5 w-3.5 text-muted-foreground" /> : <ChevronDown className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100" />}</span>
+                              <span className="text-muted-foreground text-sm">· {formatDate(tweet.created_at)}</span>
                             </div>
-                            <p className="text-sm mt-1.5 leading-relaxed whitespace-pre-wrap break-words">{tweet.text}</p>
-                            {tweet.public_metrics && (
-                              <div className="flex gap-5 mt-2.5 text-xs text-muted-foreground">
-                                <span className="flex items-center gap-1"><MessageCircle className="h-3 w-3" />{tweet.public_metrics.reply_count} replies</span>
-                                <span className="flex items-center gap-1"><Repeat2 className="h-3 w-3" />{tweet.public_metrics.retweet_count} reposts</span>
-                                <span className="flex items-center gap-1"><Heart className="h-3 w-3" />{tweet.public_metrics.like_count} likes</span>
-                              </div>
-                            )}
+                            <p className={`text-sm mt-0.5 leading-relaxed whitespace-pre-wrap break-words ${isExpanded ? "" : "line-clamp-3"}`}>{tweet.text}</p>
+                            {/* Twitter-style action bar */}
+                            <div className="flex justify-between mt-2 max-w-md -ml-1.5">
+                              <button className="group/reply flex items-center gap-0.5 text-xs text-muted-foreground transition-colors hover:text-blue-500" onClick={(e) => e.stopPropagation()}>
+                                <div className="p-1.5 rounded-full transition-colors group-hover/reply:bg-blue-500/10"><MessageCircle className="h-4 w-4" /></div>
+                                {tweet.public_metrics?.reply_count ? <span>{tweet.public_metrics.reply_count}</span> : null}
+                              </button>
+                              <button className="group/repost flex items-center gap-0.5 text-xs text-muted-foreground transition-colors hover:text-green-500" onClick={(e) => e.stopPropagation()}>
+                                <div className="p-1.5 rounded-full transition-colors group-hover/repost:bg-green-500/10"><Repeat2 className="h-4 w-4" /></div>
+                                {tweet.public_metrics?.retweet_count ? <span>{tweet.public_metrics.retweet_count}</span> : null}
+                              </button>
+                              <button className="group/like flex items-center gap-0.5 text-xs text-muted-foreground transition-colors hover:text-pink-500" onClick={(e) => e.stopPropagation()}>
+                                <div className="p-1.5 rounded-full transition-colors group-hover/like:bg-pink-500/10"><Heart className="h-4 w-4" /></div>
+                                {tweet.public_metrics?.like_count ? <span>{tweet.public_metrics.like_count}</span> : null}
+                              </button>
+                              <button className="group/views flex items-center gap-0.5 text-xs text-muted-foreground transition-colors hover:text-blue-500" onClick={(e) => e.stopPropagation()}>
+                                <div className="p-1.5 rounded-full transition-colors group-hover/views:bg-blue-500/10"><BarChart2 className="h-4 w-4" /></div>
+                                {tweet.public_metrics?.impression_count ? <span>{formatNumber(tweet.public_metrics.impression_count)}</span> : null}
+                              </button>
+                            </div>
                           </div>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 text-muted-foreground hover:text-destructive"
-                            onClick={(e) => { e.stopPropagation(); dismissTweet(tweet.id); }}
-                            title="Remove from feed"
-                          >
-                            <X className="h-3.5 w-3.5" />
-                          </Button>
                         </div>
                         {isExpanded && (
-                          <div className="mt-3 ml-13 space-y-3" style={{ marginLeft: "52px" }}>
-                            {parentTweet && (
-                              <div className="flex gap-2 p-3 rounded-lg bg-muted/40 border border-border/50">
-                                <div className="w-0.5 bg-muted-foreground/20 rounded-full shrink-0" />
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex items-center gap-1.5">
-                                    <Avatar className="h-5 w-5"><AvatarImage src={parentUser?.profile_image_url} /><AvatarFallback className="text-[9px]">{parentUser?.name?.charAt(0)?.toUpperCase() || "?"}</AvatarFallback></Avatar>
-                                    <span className="font-medium text-xs">{parentUser?.name || "Unknown"}</span>
-                                    <span className="text-muted-foreground text-xs">@{parentUser?.username || "unknown"}</span>
-                                  </div>
-                                  <p className="text-xs mt-1 leading-relaxed whitespace-pre-wrap text-muted-foreground">{parentTweet.text}</p>
-                                </div>
-                              </div>
-                            )}
-                            {!parentTweet && parentRef && (
-                              <p className="text-xs text-muted-foreground italic">Replying to a tweet (original unavailable)</p>
-                            )}
+                          <div className="mt-3 ml-[52px] space-y-3">
                             {hasThread && (!threadData || threadData.conversation_id !== tweet.conversation_id) && (
                               <Button variant="outline" size="sm" disabled={threadLoading} onClick={(e) => { e.stopPropagation(); loadThread(tweet.conversation_id!); }}>
-                                {threadLoading ? <><RefreshCw className="h-3.5 w-3.5 mr-1.5 animate-spin" />Loading thread...</> : <><MessageCircle className="h-3.5 w-3.5 mr-1.5" />Load full thread</>}
+                                {threadLoading ? <><RefreshCw className="h-3.5 w-3.5 mr-1.5 animate-spin" />Loading thread...</> : <><MessageCircle className="h-3.5 w-3.5 mr-1.5" />Load conversation</>}
                               </Button>
                             )}
-                            {threadData && threadData.conversation_id === tweet.conversation_id && (
-                              <div className="space-y-1">
-                                <Badge variant="secondary" className="text-xs mb-2">{threadData.data.length} tweets in thread</Badge>
-                                {threadData.data.map((t) => {
-                                  const tu = getUserFromThread(t.author_id) || getUser(t.author_id);
-                                  return (
-                                    <div key={t.id} className={`flex gap-2 p-2.5 rounded-lg border text-sm ${t.id === tweet.id ? "bg-primary/5 border-primary/30" : "border-border/50"}`}>
-                                      <Avatar className="h-6 w-6 shrink-0"><AvatarImage src={tu?.profile_image_url} /><AvatarFallback className="text-[9px]">{tu?.name?.charAt(0)?.toUpperCase() || "?"}</AvatarFallback></Avatar>
-                                      <div className="flex-1 min-w-0">
-                                        <div className="flex items-center gap-1 text-xs"><span className="font-medium">{tu?.name || "Unknown"}</span><span className="text-muted-foreground">@{tu?.username}</span><span className="text-muted-foreground">· {formatDate(t.created_at)}</span></div>
-                                        <p className="text-xs mt-0.5 leading-relaxed whitespace-pre-wrap break-words">{t.text}</p>
+                            {threadData && threadData.conversation_id === tweet.conversation_id && (() => {
+                              const contextTweets = threadData.data
+                                .filter((t) => new Date(t.created_at).getTime() < new Date(tweet.created_at).getTime() && t.id !== tweet.id)
+                                .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+                              return contextTweets.length > 0 ? (
+                                <div>
+                                  <p className="text-xs text-muted-foreground mb-2">Conversation context</p>
+                                  {contextTweets.map((t, idx) => {
+                                    const tu = getUserFromThread(t.author_id) || getUser(t.author_id);
+                                    return (
+                                      <div key={t.id} className="flex gap-2">
+                                        <div className="flex flex-col items-center">
+                                          <Avatar className="h-6 w-6 shrink-0"><AvatarImage src={tu?.profile_image_url} /><AvatarFallback className="text-[9px]">{tu?.name?.charAt(0)?.toUpperCase() || "?"}</AvatarFallback></Avatar>
+                                          {idx < contextTweets.length - 1 && <div className="w-0.5 flex-1 bg-border mt-0.5 rounded-full" />}
+                                        </div>
+                                        <div className="flex-1 min-w-0 pb-3">
+                                          <div className="flex items-center gap-1 text-xs">
+                                            <span className="font-medium">{tu?.name || "Unknown"}</span>
+                                            <span className="text-muted-foreground">@{tu?.username}</span>
+                                            <span className="text-muted-foreground">· {formatDate(t.created_at)}</span>
+                                          </div>
+                                          <p className="text-xs mt-0.5 leading-relaxed whitespace-pre-wrap break-words">{t.text}</p>
+                                        </div>
                                       </div>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            )}
-                            <div className="flex items-center gap-2 pt-1">
+                                    );
+                                  })}
+                                </div>
+                              ) : null;
+                            })()}
+                            <div className="flex items-center gap-2 flex-wrap pt-1">
                               <Button variant="outline" size="sm" asChild onClick={(e) => e.stopPropagation()}>
                                 <a href={`https://x.com/${user?.username || "x"}/status/${tweet.id}`} target="_blank" rel="noopener noreferrer">
                                   <ExternalLink className="h-3.5 w-3.5 mr-1.5" />View on Twitter
                                 </a>
+                              </Button>
+                              <Button variant="outline" size="sm" disabled={creatingRepo === tweet.id} onClick={(e) => { e.stopPropagation(); createRepo(tweet.text, tweet.id); }}>
+                                <Github className="h-3.5 w-3.5 mr-1.5" />
+                                {creatingRepo === tweet.id ? "Creating..." : "Create GitHub Repo"}
+                              </Button>
+                              {createdRepoUrl[tweet.id] && (
+                                <a href={createdRepoUrl[tweet.id]} target="_blank" rel="noopener noreferrer" className="text-xs text-green-600 hover:underline" onClick={(e) => e.stopPropagation()}>
+                                  Repo created ↗
+                                </a>
+                              )}
+                              <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-destructive ml-auto" onClick={(e) => { e.stopPropagation(); dismissTweet(tweet.id); }}>
+                                <X className="h-3.5 w-3.5 mr-1" />Dismiss
                               </Button>
                             </div>
                           </div>
