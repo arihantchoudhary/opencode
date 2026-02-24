@@ -41,6 +41,16 @@ def get_user_by_email(email: str) -> dict | None:
     return items[0] if items else None
 
 
+def get_user_by_clerk_id(clerk_id: str) -> dict | None:
+    table = _get_table()
+    response = table.scan(
+        FilterExpression="clerk_id = :cid",
+        ExpressionAttributeValues={":cid": clerk_id},
+    )
+    items = response.get("Items", [])
+    return items[0] if items else None
+
+
 def update_user(user_id: str, data: dict) -> dict | None:
     table = _get_table()
     existing = get_user(user_id)

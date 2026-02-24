@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { UserButton } from "@clerk/nextjs";
+import { UserButton, useUser } from "@clerk/nextjs";
 import {
   LayoutDashboard,
   AtSign,
@@ -124,6 +124,47 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeView, setActiveView] = useState("dashboard");
+  const { user: clerkUser } = useUser();
+  const [myHandle, setMyHandle] = useState("");
+  const [myHandleInput, setMyHandleInput] = useState("");
+  const [showAllMentions, setShowAllMentions] = useState(false);
+  const [savingHandle, setSavingHandle] = useState(false);
+
+  // Load twitter_handle from backend when logged in
+  useEffect(() => {
+    if (!clerkUser?.id) return;
+    fetch(`${API_BASE}/api/users/by-clerk/${clerkUser.id}`)
+      .then((r) => {
+        if (!r.ok) return null;
+        return r.json();
+      })
+      .then((data) => {
+        if (data?.twitter_handle) {
+          setMyHandle(data.twitter_handle);
+          setMyHandleInput(data.twitter_handle);
+        }
+      })
+      .catch(() => {});
+  }, [clerkUser?.id]);
+
+  async function saveMyHandle() {
+    const trimmed = myHandleInput.trim().replace(/^@/, "");
+    if (!trimmed || !clerkUser?.id) return;
+    setSavingHandle(true);
+    try {
+      await fetch(`${API_BASE}/api/users/by-clerk/${clerkUser.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ twitter_handle: trimmed }),
+      });
+      setMyHandle(trimmed);
+    } catch {
+      // fallback to local only
+      setMyHandle(trimmed);
+    } finally {
+      setSavingHandle(false);
+    }
+  }
 
   const fetchData = useCallback(async (user: string, forceRefresh = false) => {
     setLoading(true);
@@ -179,14 +220,21 @@ export default function Home() {
     return mentions?.includes?.users?.find((u) => u.id === authorId);
   }
 
-  // Filter tweets: only show ones that actually mention the tracked username in the text
-  // and haven't been dismissed by the user
+  // Filter tweets:
+  // - Must mention @stardroplin in the text
+  // - If myHandle is set and not showing all, only show tweets authored by the logged-in user
+  // - Dismissed tweets are hidden
   const filteredTweets = mentions?.data?.filter((t) => {
     if (dismissedIds.has(t.id)) return false;
     const text = t.text.toLowerCase();
     // Always require the tweet to mention the tracked username
     const mentionsUser = text.includes(`@${username.toLowerCase()}`);
     if (!mentionsUser) return false;
+    // If user has set their handle, filter to only their tweets (unless showing all)
+    if (myHandle && !showAllMentions) {
+      const author = getUser(t.author_id);
+      if (author?.username.toLowerCase() !== myHandle.toLowerCase()) return false;
+    }
     // If there's an additional text filter, apply it
     if (filterText) return text.includes(filterText.toLowerCase());
     return true;
@@ -257,8 +305,32 @@ export default function Home() {
           </SidebarGroup>
 
           <SidebarGroup>
-            <SidebarGroupLabel>Account</SidebarGroupLabel>
+            <SidebarGroupLabel>Your Twitter</SidebarGroupLabel>
             <SidebarGroupContent>
+              <div className="px-2 space-y-2">
+                <div className="flex gap-1.5">
+                  <Input
+                    value={myHandleInput}
+                    onChange={(e) => setMyHandleInput(e.target.value)}
+                    placeholder="Your @handle"
+                    className="h-8 text-xs"
+                    onKeyDown={(e) => e.key === "Enter" && saveMyHandle()}
+                  />
+                  <Button size="sm" className="h-8 px-2 text-xs" onClick={saveMyHandle} disabled={savingHandle}>
+                    {savingHandle ? "..." : "Save"}
+                  </Button>
+                </div>
+                {myHandle && (
+                  <Button
+                    variant={showAllMentions ? "outline" : "default"}
+                    size="sm"
+                    className="w-full h-7 text-xs"
+                    onClick={() => setShowAllMentions(!showAllMentions)}
+                  >
+                    {showAllMentions ? "Show only my tweets" : "Show all mentions"}
+                  </Button>
+                )}
+              </div>
               <SidebarMenu>
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
@@ -266,12 +338,6 @@ export default function Home() {
                       <Twitter className="h-4 w-4" />
                       <span>@{username}</span>
                     </a>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton>
-                    <Settings className="h-4 w-4" />
-                    <span>Settings</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               </SidebarMenu>

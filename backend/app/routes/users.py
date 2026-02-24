@@ -25,6 +25,13 @@ def daily_activity():
 
 @router.post("/", response_model=UserResponse, status_code=201)
 def create(body: UserCreate):
+    # If clerk_id provided, check if user already exists (upsert)
+    if body.clerk_id:
+        existing = db.get_user_by_clerk_id(body.clerk_id)
+        if existing:
+            updates = body.model_dump(exclude_unset=True)
+            updates.pop("clerk_id", None)
+            return db.update_user(existing["user_id"], updates) or existing
     existing = db.get_user_by_email(body.email)
     if existing:
         raise HTTPException(400, "User with this email already exists")
@@ -50,6 +57,25 @@ def update(user_id: str, body: UserUpdate):
     if not user:
         raise HTTPException(404, "User not found")
     return user
+
+
+@router.get("/by-clerk/{clerk_id}", response_model=UserResponse)
+def get_by_clerk(clerk_id: str):
+    user = db.get_user_by_clerk_id(clerk_id)
+    if not user:
+        raise HTTPException(404, "User not found")
+    return user
+
+
+@router.patch("/by-clerk/{clerk_id}", response_model=UserResponse)
+def update_by_clerk(clerk_id: str, body: UserUpdate):
+    user = db.get_user_by_clerk_id(clerk_id)
+    if not user:
+        raise HTTPException(404, "User not found")
+    updated = db.update_user(user["user_id"], body.model_dump(exclude_unset=True))
+    if not updated:
+        raise HTTPException(404, "User not found")
+    return updated
 
 
 @router.delete("/{user_id}", status_code=204)

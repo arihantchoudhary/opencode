@@ -14,15 +14,17 @@ export async function POST(req: NextRequest) {
       )?.email_address || "";
 
     try {
+      const name = [user.first_name, user.last_name].filter(Boolean).join(" ") || "User";
       await fetch(`${API_BASE}/api/users`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           clerk_id: user.id,
           email,
-          first_name: user.first_name || "",
-          last_name: user.last_name || "",
-          image_url: user.image_url || "",
+          name,
+          avatar_url: user.image_url || "",
+          auth_provider: "clerk",
+          signup_source: "web",
         }),
       });
     } catch {
