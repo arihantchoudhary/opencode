@@ -305,43 +305,38 @@ export default function Home() {
                     <span>Analytics</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    isActive={activeView === "settings"}
+                    onClick={() => setActiveView("settings")}
+                  >
+                    <Settings className="h-4 w-4" />
+                    <span>Settings</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
 
           <SidebarGroup>
-            <SidebarGroupLabel>Your Twitter</SidebarGroupLabel>
+            <SidebarGroupLabel>Account</SidebarGroupLabel>
             <SidebarGroupContent>
-              <div className="px-2 space-y-2">
-                <div className="flex gap-1.5">
-                  <Input
-                    value={myHandleInput}
-                    onChange={(e) => setMyHandleInput(e.target.value)}
-                    placeholder="Your @handle"
-                    className="h-8 text-xs"
-                    onKeyDown={(e) => e.key === "Enter" && saveMyHandle()}
-                  />
-                  <Button size="sm" className="h-8 px-2 text-xs" onClick={saveMyHandle} disabled={savingHandle}>
-                    {savingHandle ? "..." : "Save"}
-                  </Button>
-                </div>
-                {myHandle && (
-                  <Button
-                    variant={showAllMentions ? "outline" : "default"}
-                    size="sm"
-                    className="w-full h-7 text-xs"
-                    onClick={() => setShowAllMentions(!showAllMentions)}
-                  >
-                    {showAllMentions ? "Show only my tweets" : "Show all mentions"}
-                  </Button>
-                )}
-              </div>
               <SidebarMenu>
+                {myHandle && (
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild>
+                      <a href={`https://x.com/${myHandle}`} target="_blank" rel="noopener noreferrer">
+                        <Twitter className="h-4 w-4" />
+                        <span>@{myHandle}</span>
+                      </a>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )}
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
                     <a href={`https://x.com/${username}`} target="_blank" rel="noopener noreferrer">
-                      <Twitter className="h-4 w-4" />
-                      <span>@{username}</span>
+                      <AtSign className="h-4 w-4" />
+                      <span>Tracking @{username}</span>
                     </a>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -406,11 +401,13 @@ export default function Home() {
               {activeView === "dashboard" && "Dashboard"}
               {activeView === "mentions" && "Mentions"}
               {activeView === "analytics" && "Analytics"}
+              {activeView === "settings" && "Settings"}
             </h2>
             <p className="text-muted-foreground">
               {activeView === "dashboard" && `Overview for @${username}`}
               {activeView === "mentions" && `Posts mentioning @${username}`}
               {activeView === "analytics" && `Engagement analytics for @${username}`}
+              {activeView === "settings" && "Configure your Stardrop dashboard"}
             </p>
           </div>
 
@@ -420,9 +417,9 @@ export default function Home() {
               {/* Profile banner */}
               {profile && (
                 <Card>
-                  <CardContent className="pt-6">
+                  <CardContent className="p-4">
                     <div className="flex items-center gap-4">
-                      <Avatar className="h-14 w-14">
+                      <Avatar className="h-12 w-12">
                         <AvatarImage src={profile.profile_image_url} />
                         <AvatarFallback className="text-lg">
                           {profile.name?.charAt(0)?.toUpperCase()}
@@ -746,6 +743,131 @@ export default function Home() {
                   {(!mentions?.includes?.users || mentions.includes.users.length === 0) && (
                     <p className="text-sm text-muted-foreground text-center py-4">No data yet</p>
                   )}
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* Settings view */}
+          {activeView === "settings" && (
+            <div className="grid gap-4 max-w-2xl">
+              {/* Your Twitter Handle */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Your Twitter Handle</CardTitle>
+                  <CardDescription>
+                    Link your Twitter account to filter mentions and only see posts you authored
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex gap-2">
+                    <div className="relative flex-1">
+                      <span className="absolute left-3 top-2.5 text-muted-foreground text-sm">@</span>
+                      <Input
+                        value={myHandleInput}
+                        onChange={(e) => setMyHandleInput(e.target.value)}
+                        placeholder="your_username"
+                        className="pl-7"
+                        onKeyDown={(e) => e.key === "Enter" && saveMyHandle()}
+                      />
+                    </div>
+                    <Button onClick={saveMyHandle} disabled={savingHandle}>
+                      {savingHandle ? "Saving..." : "Save"}
+                    </Button>
+                  </div>
+                  {myHandle && (
+                    <p className="text-sm text-muted-foreground">
+                      Currently set to <span className="font-medium text-foreground">@{myHandle}</span>
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Tracked Account */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Tracked Account</CardTitle>
+                  <CardDescription>
+                    The Twitter account whose mentions you&apos;re tracking
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <form onSubmit={handleSearch} className="flex gap-2">
+                    <div className="relative flex-1">
+                      <span className="absolute left-3 top-2.5 text-muted-foreground text-sm">@</span>
+                      <Input
+                        value={inputValue}
+                        onChange={(e) => setInputValue(e.target.value)}
+                        placeholder="stardroplin"
+                        className="pl-7"
+                      />
+                    </div>
+                    <Button type="submit">Update</Button>
+                  </form>
+                  <p className="text-sm text-muted-foreground">
+                    Currently tracking <span className="font-medium text-foreground">@{username}</span>
+                  </p>
+                </CardContent>
+              </Card>
+
+              {/* Feed Preferences */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Feed Preferences</CardTitle>
+                  <CardDescription>
+                    Control what shows up in your mentions feed
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium">Show all mentions</p>
+                      <p className="text-xs text-muted-foreground">Show mentions from everyone, not just your posts</p>
+                    </div>
+                    <Button
+                      variant={showAllMentions ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setShowAllMentions(!showAllMentions)}
+                    >
+                      {showAllMentions ? "On" : "Off"}
+                    </Button>
+                  </div>
+                  <Separator />
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium">Dismissed posts</p>
+                      <p className="text-xs text-muted-foreground">{dismissedIds.size} posts hidden from your feed</p>
+                    </div>
+                    {dismissedIds.size > 0 && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setDismissedIds(new Set())}
+                      >
+                        Reset
+                      </Button>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Cache */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Data &amp; Cache</CardTitle>
+                  <CardDescription>
+                    Mentions are cached for 15 minutes to save API calls
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Button
+                    variant="outline"
+                    onClick={() => { fetchData(username, true); setActiveView("dashboard"); }}
+                    disabled={loading}
+                  >
+                    <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />
+                    Force Refresh from Twitter
+                  </Button>
                 </CardContent>
               </Card>
             </div>
