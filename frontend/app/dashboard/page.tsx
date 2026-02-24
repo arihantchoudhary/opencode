@@ -177,21 +177,51 @@ export default function Home() {
         console.log("[Stardrop] Force refreshing cache...");
         await fetch(`${API_BASE}/api/twitter/refresh/${user}`, { method: "POST" }).catch(() => {});
       }
-      const res = await fetch(`${API_BASE}/api/twitter/dashboard/${user}`);
-      if (!res.ok) {
-        if (res.status === 404) throw new Error(`Twitter user @${user} not found. Check the username.`);
-        if (res.status === 429) throw new Error("Twitter rate limit hit. Try again in a few minutes.");
-        const body = await res.json().catch(() => null);
-        throw new Error(body?.detail || `Error ${res.status}`);
+
+      // Try single dashboard endpoint first, fall back to separate calls
+      let dashboardOk = false;
+      const dashRes = await fetch(`${API_BASE}/api/twitter/dashboard/${user}`);
+      if (dashRes.ok) {
+        const data = await dashRes.json();
+        console.log("[Stardrop] Dashboard endpoint OK:", {
+          profile: data.profile?.username,
+          tweets: data.mentions?.data?.length || 0,
+          stats: data.stats,
+        });
+        if (data.mentions) setMentions(data.mentions);
+        if (data.profile) setProfile(data.profile);
+        dashboardOk = true;
       }
-      const data = await res.json();
-      console.log("[Stardrop] Dashboard data received:", {
-        profile: data.profile?.username,
-        tweets: data.mentions?.data?.length || 0,
-        stats: data.stats,
-      });
-      if (data.mentions) setMentions(data.mentions);
-      if (data.profile) setProfile(data.profile);
+
+      if (!dashboardOk) {
+        console.log("[Stardrop] Dashboard endpoint not available, using separate calls...");
+        const [mentionsRes, profileRes] = await Promise.allSettled([
+          fetch(`${API_BASE}/api/twitter/mentions/${user}`).then(async (r) => {
+            if (!r.ok) {
+              if (r.status === 404) throw new Error(`Twitter user @${user} not found. Check the username.`);
+              if (r.status === 429) throw new Error("Twitter rate limit hit. Try again in a few minutes.");
+              const body = await r.json().catch(() => null);
+              throw new Error(body?.detail || `Error ${r.status}`);
+            }
+            return r.json() as Promise<MentionsResponse>;
+          }),
+          fetch(`${API_BASE}/api/twitter/profile/${user}`).then((r) => {
+            if (!r.ok) return null;
+            return r.json() as Promise<ProfileData>;
+          }),
+        ]);
+
+        if (mentionsRes.status === "fulfilled") {
+          console.log("[Stardrop] Mentions loaded:", mentionsRes.value?.data?.length || 0, "tweets");
+          setMentions(mentionsRes.value);
+        } else {
+          throw mentionsRes.reason;
+        }
+        if (profileRes.status === "fulfilled" && profileRes.value) {
+          console.log("[Stardrop] Profile loaded:", profileRes.value.username);
+          setProfile(profileRes.value);
+        }
+      }
     } catch (err) {
       console.error("[Stardrop] Dashboard fetch error:", err);
       setError(err instanceof Error ? err.message : "Failed to fetch");
