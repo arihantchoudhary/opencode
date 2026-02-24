@@ -4,12 +4,21 @@
     "slug": "stardrop",
     "version": "0.1.0",
     "scheme": "stardrop",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
     "platforms": ["ios", "android"],
     "ios": {
-      "bundleIdentifier": "com.stardrop.app"
+      "bundleIdentifier": "com.stardrop.app",
+      "supportsTablet": true
     },
     "android": {
-      "package": "com.stardrop.app"
-    }
+      "package": "com.stardrop.app",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#000000"
+      }
+    },
+    "plugins": ["expo-router", "expo-secure-store"]
   }
 }
