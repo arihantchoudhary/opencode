@@ -129,6 +129,23 @@ export default function Home() {
   const [myHandleInput, setMyHandleInput] = useState("");
   const [showAllMentions, setShowAllMentions] = useState(false);
   const [savingHandle, setSavingHandle] = useState(false);
+  const [refreshRemaining, setRefreshRemaining] = useState(4);
+  const [refreshResetAt, setRefreshResetAt] = useState<Date | null>(null);
+  const [refreshCooldown, setRefreshCooldown] = useState(0);
+
+  // Countdown timer for rate limit cooldown
+  useEffect(() => {
+    if (!refreshResetAt) return;
+    const interval = setInterval(() => {
+      const diff = Math.max(0, Math.ceil((refreshResetAt.getTime() - Date.now()) / 1000));
+      setRefreshCooldown(diff);
+      if (diff === 0) {
+        setRefreshRemaining(4);
+        setRefreshResetAt(null);
+      }
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [refreshResetAt]);
 
   // Load twitter_handle from backend when logged in
   useEffect(() => {
@@ -141,6 +158,9 @@ export default function Home() {
         if (data?.twitter_handle) {
           setMyHandle(data.twitter_handle);
           setMyHandleInput(data.twitter_handle);
+        }
+        if (data?.dismissed_tweet_ids?.length) {
+          setDismissedIds(new Set(data.dismissed_tweet_ids));
         }
       })
       .catch((err) => console.error("[Stardrop] Failed to load user settings:", err));
@@ -175,7 +195,22 @@ export default function Home() {
     try {
       if (forceRefresh) {
         console.log("[Stardrop] Force refreshing cache...");
-        await fetch(`${API_BASE}/api/twitter/refresh/${user}`, { method: "POST" }).catch(() => {});
+        const refreshRes = await fetch(
+          `${API_BASE}/api/twitter/refresh/${user}${clerkUser?.id ? `?clerk_id=${clerkUser.id}` : ""}`,
+          { method: "POST" },
+        ).catch(() => null);
+        if (refreshRes?.status === 429) {
+          const errData = await refreshRes.json().catch(() => null);
+          const detail = errData?.detail;
+          setRefreshRemaining(0);
+          if (detail?.reset_at) setRefreshResetAt(new Date(detail.reset_at));
+          console.log("[Stardrop] Rate limited:", detail?.message);
+        } else if (refreshRes?.ok) {
+          const refreshData = await refreshRes.json().catch(() => null);
+          if (refreshData?.rate_limit) {
+            setRefreshRemaining(refreshData.rate_limit.remaining);
+          }
+        }
       }
 
       // Try single dashboard endpoint first, fall back to separate calls
@@ -228,7 +263,7 @@ export default function Home() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [clerkUser?.id]);
 
   useEffect(() => {
     fetchData(username);
@@ -248,7 +283,17 @@ export default function Home() {
   const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set());
 
   function dismissTweet(id: string) {
-    setDismissedIds((prev) => new Set(prev).add(id));
+    setDismissedIds((prev) => {
+      const next = new Set(prev).add(id);
+      if (clerkUser?.id) {
+        fetch(`${API_BASE}/api/users/by-clerk/${clerkUser.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ dismissed_tweet_ids: Array.from(next) }),
+        }).catch((err) => console.error("[Stardrop] Failed to persist dismiss:", err));
+      }
+      return next;
+    });
   }
 
   function getUser(authorId: string): TwitterUser | undefined {
@@ -411,15 +456,26 @@ export default function Home() {
               Track
             </Button>
           </form>
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => fetchData(username, true)}
-            disabled={loading}
-            title="Force refresh from Twitter"
-          >
-            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-          </Button>
+          <div className="flex items-center gap-1.5">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => fetchData(username, true)}
+              disabled={loading || refreshRemaining === 0}
+              title={
+                refreshRemaining === 0
+                  ? `Rate limited — try again in ${refreshCooldown}s`
+                  : `Refresh from Twitter (${refreshRemaining}/4 left)`
+              }
+            >
+              <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+            </Button>
+            {refreshRemaining < 4 && (
+              <span className="text-xs text-muted-foreground tabular-nums">
+                {refreshRemaining > 0 ? `${refreshRemaining}/4` : `${refreshCooldown}s`}
+              </span>
+            )}
+          </div>
           <Separator orientation="vertical" className="h-6" />
           <UserButton afterSignOutUrl="/" />
         </header>
@@ -873,7 +929,16 @@ export default function Home() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => setDismissedIds(new Set())}
+                        onClick={() => {
+                          setDismissedIds(new Set());
+                          if (clerkUser?.id) {
+                            fetch(`${API_BASE}/api/users/by-clerk/${clerkUser.id}`, {
+                              method: "PATCH",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ dismissed_tweet_ids: [] }),
+                            }).catch((err) => console.error("[Stardrop] Failed to reset dismissals:", err));
+                          }
+                        }}
                       >
                         Reset
                       </Button>
@@ -894,10 +959,12 @@ export default function Home() {
                   <Button
                     variant="outline"
                     onClick={() => { fetchData(username, true); setActiveView("dashboard"); }}
-                    disabled={loading}
+                    disabled={loading || refreshRemaining === 0}
                   >
                     <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />
-                    Force Refresh from Twitter
+                    {refreshRemaining === 0
+                      ? `Rate limited (${refreshCooldown}s)`
+                      : `Force Refresh (${refreshRemaining}/4 left)`}
                   </Button>
                 </CardContent>
               </Card>

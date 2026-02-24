@@ -19,6 +19,8 @@ class UserUpdate(BaseModel):
     avatar_url: Optional[str] = None
     bio: Optional[str] = None
     twitter_handle: Optional[str] = None
+    dismissed_tweet_ids: Optional[list[str]] = None
+    refresh_timestamps: Optional[list[str]] = None
 
 
 class DailyActivity(BaseModel):
@@ -40,6 +42,8 @@ class UserResponse(BaseModel):
     signup_source: str
     reference: Optional[str] = None
     last_login: Optional[str] = None
+    dismissed_tweet_ids: Optional[list[str]] = None
+    refresh_timestamps: Optional[list[str]] = None
 
 
 class SessionReport(BaseModel):

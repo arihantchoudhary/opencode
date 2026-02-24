@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 
 import boto3
@@ -6,6 +6,9 @@ import requests
 from fastapi import APIRouter, HTTPException, Query
 
 from app.config import settings
+
+REFRESH_RATE_LIMIT = 4
+REFRESH_RATE_WINDOW_SECONDS = 60
 
 router = APIRouter(prefix="/api/twitter", tags=["twitter"])
 
@@ -199,10 +202,47 @@ def get_profile(username: str):
 
 
 @router.post("/refresh/{username}")
-def refresh_mentions(username: str):
-    """Force refresh mentions from Twitter API (use sparingly)."""
+def refresh_mentions(username: str, clerk_id: str = Query(default=None)):
+    """Force refresh mentions from Twitter API. Rate limited to 4/minute per user."""
+    from app import db
+
+    remaining = REFRESH_RATE_LIMIT
+
+    if clerk_id:
+        user = db.get_user_by_clerk_id(clerk_id)
+        if user:
+            now = datetime.now(timezone.utc)
+            window_start = now - timedelta(seconds=REFRESH_RATE_WINDOW_SECONDS)
+
+            timestamps = user.get("refresh_timestamps") or []
+            recent = [ts for ts in timestamps if datetime.fromisoformat(ts) > window_start]
+
+            if len(recent) >= REFRESH_RATE_LIMIT:
+                oldest = min(datetime.fromisoformat(ts) for ts in recent)
+                reset_at = oldest + timedelta(seconds=REFRESH_RATE_WINDOW_SECONDS)
+                raise HTTPException(
+                    status_code=429,
+                    detail={
+                        "message": "Refresh rate limit exceeded. Try again shortly.",
+                        "remaining": 0,
+                        "reset_at": reset_at.isoformat(),
+                    },
+                )
+
+            recent.append(now.isoformat())
+            db.update_user(user["user_id"], {"refresh_timestamps": recent})
+            remaining = REFRESH_RATE_LIMIT - len(recent)
+
     data = _fetch_from_twitter(username)
-    return {"status": "refreshed", "result_count": data.get("meta", {}).get("result_count", 0)}
+    return {
+        "status": "refreshed",
+        "result_count": data.get("meta", {}).get("result_count", 0),
+        "rate_limit": {
+            "remaining": remaining,
+            "limit": REFRESH_RATE_LIMIT,
+            "window_seconds": REFRESH_RATE_WINDOW_SECONDS,
+        },
+    }
 
 
 @router.get("/dashboard/{username}")
