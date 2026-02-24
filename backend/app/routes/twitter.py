@@ -21,7 +21,7 @@ def _resolve_user_id() -> str:
         return _user_id_cache
 
     resp = requests.get(
-        f"{TWITTER_API_BASE}/users/by/username/Stardropper",
+        f"{TWITTER_API_BASE}/users/by/username/stardroplin",
         headers=_headers(),
         timeout=10,
     )
@@ -30,7 +30,7 @@ def _resolve_user_id() -> str:
 
     user_data = resp.json().get("data")
     if not user_data:
-        raise HTTPException(status_code=404, detail="Twitter user @Stardropper not found")
+        raise HTTPException(status_code=404, detail="Twitter user @stardroplin not found")
 
     _user_id_cache = user_data["id"]
     return _user_id_cache
@@ -46,7 +46,7 @@ def get_mentions(
     end_time: str | None = Query(default=None),
 ):
     """
-    Fetch recent posts mentioning @Stardropper.
+    Fetch recent posts mentioning @stardroplin.
     Uses GET /2/users/{id}/mentions from the Twitter API v2.
     """
     if not settings.twitter_bearer_token:
