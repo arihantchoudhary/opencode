@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Stardrop",
-  description: "Stardrop",
+  description: "Stardrop — Twitter Mentions Dashboard",
 };
 
 export default function RootLayout({
@@ -13,7 +14,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <TooltipProvider>{children}</TooltipProvider>
+      </body>
     </html>
   );
 }
