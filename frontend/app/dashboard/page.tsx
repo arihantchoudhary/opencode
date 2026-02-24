@@ -226,22 +226,21 @@ export default function Home() {
   }
 
   // Filter tweets:
-  // - Must mention @stardroplin in the text
+  // - API already returns mentions for the tracked user
   // - If myHandle is set and not showing all, only show tweets authored by the logged-in user
   // - Dismissed tweets are hidden
   const filteredTweets = mentions?.data?.filter((t) => {
     if (dismissedIds.has(t.id)) return false;
-    const text = t.text.toLowerCase();
-    // Always require the tweet to mention the tracked username
-    const mentionsUser = text.includes(`@${username.toLowerCase()}`);
-    if (!mentionsUser) return false;
     // If user has set their handle, filter to only their tweets (unless showing all)
     if (myHandle && !showAllMentions) {
       const author = getUser(t.author_id);
       if (author?.username.toLowerCase() !== myHandle.toLowerCase()) return false;
     }
     // If there's an additional text filter, apply it
-    if (filterText) return text.includes(filterText.toLowerCase());
+    if (filterText) {
+      const text = t.text.toLowerCase();
+      return text.includes(filterText.toLowerCase());
+    }
     return true;
   });
 
@@ -346,18 +345,20 @@ export default function Home() {
         </SidebarContent>
 
         <SidebarFooter>
-          {profile && (
-            <div className="flex items-center gap-3 px-2 py-2">
-              <Avatar className="h-8 w-8">
-                <AvatarImage src={profile.profile_image_url} />
-                <AvatarFallback>{profile.name?.charAt(0)?.toUpperCase()}</AvatarFallback>
-              </Avatar>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">{profile.name}</p>
-                <p className="text-xs text-muted-foreground truncate">@{profile.username}</p>
-              </div>
+          <div className="flex items-center gap-3 px-2 py-2">
+            <Avatar className="h-8 w-8">
+              <AvatarImage src={clerkUser?.imageUrl} />
+              <AvatarFallback>{clerkUser?.firstName?.charAt(0)?.toUpperCase() || "?"}</AvatarFallback>
+            </Avatar>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium truncate">
+                {clerkUser?.fullName || clerkUser?.firstName || "You"}
+              </p>
+              <p className="text-xs text-muted-foreground truncate">
+                {myHandle ? `@${myHandle}` : clerkUser?.primaryEmailAddress?.emailAddress || "Set up in Settings"}
+              </p>
             </div>
-          )}
+          </div>
         </SidebarFooter>
       </Sidebar>
 
