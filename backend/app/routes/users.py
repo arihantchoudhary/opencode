@@ -5,7 +5,7 @@ from fastapi import APIRouter, HTTPException
 from app import db
 from app.models import DailyActivity, UserCreate, UserResponse, UserUpdate
 
-router = APIRouter(prefix="/users", tags=["users"])
+router = APIRouter(prefix="/api/users", tags=["users"])
 
 
 @router.get("/stats/daily", response_model=list[DailyActivity])
