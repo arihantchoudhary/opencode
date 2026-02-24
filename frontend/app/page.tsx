@@ -123,10 +123,15 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [activeView, setActiveView] = useState("dashboard");
 
-  const fetchData = useCallback(async (user: string) => {
+  const fetchData = useCallback(async (user: string, forceRefresh = false) => {
     setLoading(true);
     setError(null);
     try {
+      // If force refresh, call the refresh endpoint first to bust the cache
+      if (forceRefresh) {
+        await fetch(`${API_BASE}/api/twitter/refresh/${user}`, { method: "POST" }).catch(() => {});
+      }
+
       const [mentionsRes, profileRes] = await Promise.allSettled([
         fetch(`${API_BASE}/api/twitter/mentions/${user}`).then((r) => {
           if (!r.ok) throw new Error(`${r.status}`);
@@ -292,8 +297,9 @@ export default function Home() {
           <Button
             variant="outline"
             size="icon"
-            onClick={() => fetchData(username)}
+            onClick={() => fetchData(username, true)}
             disabled={loading}
+            title="Force refresh from Twitter"
           >
             <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
           </Button>
@@ -423,7 +429,7 @@ export default function Home() {
                   {error && !loading && (
                     <div className="p-6 text-center">
                       <p className="text-sm text-destructive">Error: {error}</p>
-                      <Button variant="outline" size="sm" className="mt-3" onClick={() => fetchData(username)}>
+                      <Button variant="outline" size="sm" className="mt-3" onClick={() => fetchData(username, true)}>
                         Retry
                       </Button>
                     </div>
