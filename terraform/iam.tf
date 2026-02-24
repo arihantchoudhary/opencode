@@ -32,7 +32,9 @@ resource "aws_iam_policy" "dynamodb_access" {
         aws_dynamodb_table.users.arn,
         "${aws_dynamodb_table.users.arn}/index/*",
         aws_dynamodb_table.sessions.arn,
-        "${aws_dynamodb_table.sessions.arn}/index/*"
+        "${aws_dynamodb_table.sessions.arn}/index/*",
+        aws_dynamodb_table.tweets.arn,
+        "${aws_dynamodb_table.tweets.arn}/index/*"
       ]
     }]
   })

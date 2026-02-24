@@ -26,7 +26,7 @@ variable "github_connection_arn" {
 
 variable "github_repo_url" {
   type        = string
-  default     = "https://github.com/anomalyco/opencode"
+  default     = "https://github.com/arihantchoudhary/stardrop"
   description = "GitHub repository URL"
 }
 

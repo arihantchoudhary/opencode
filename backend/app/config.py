@@ -10,6 +10,8 @@ class Settings(BaseSettings):
     github_app_id: str = ""
     github_app_private_key: str = ""
     twitter_bearer_token: str = ""
+    dynamodb_tweets_table_name: str = "stardrop-tweets-dev"
+    twitter_cache_ttl_minutes: int = 15
 
     class Config:
         env_file = ".env"
