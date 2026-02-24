@@ -14,7 +14,7 @@ import {
   Star,
   Settings,
   TrendingUp,
-  LogOut,
+  X,
 } from "lucide-react";
 import {
   SidebarProvider,
@@ -168,15 +168,35 @@ export default function Home() {
     }
   }
 
+  const [filterText, setFilterText] = useState("");
+  const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set());
+
+  function dismissTweet(id: string) {
+    setDismissedIds((prev) => new Set(prev).add(id));
+  }
+
   function getUser(authorId: string): TwitterUser | undefined {
     return mentions?.includes?.users?.find((u) => u.id === authorId);
   }
 
-  const totalLikes = mentions?.data?.reduce((sum, t) => sum + (t.public_metrics?.like_count || 0), 0) || 0;
-  const totalReposts = mentions?.data?.reduce((sum, t) => sum + (t.public_metrics?.retweet_count || 0), 0) || 0;
-  const totalReplies = mentions?.data?.reduce((sum, t) => sum + (t.public_metrics?.reply_count || 0), 0) || 0;
-  const totalImpressions = mentions?.data?.reduce((sum, t) => sum + (t.public_metrics?.impression_count || 0), 0) || 0;
-  const mentionCount = mentions?.data?.length || 0;
+  // Filter tweets: only show ones that actually mention the tracked username in the text
+  // and haven't been dismissed by the user
+  const filteredTweets = mentions?.data?.filter((t) => {
+    if (dismissedIds.has(t.id)) return false;
+    const text = t.text.toLowerCase();
+    // Always require the tweet to mention the tracked username
+    const mentionsUser = text.includes(`@${username.toLowerCase()}`);
+    if (!mentionsUser) return false;
+    // If there's an additional text filter, apply it
+    if (filterText) return text.includes(filterText.toLowerCase());
+    return true;
+  });
+
+  const totalLikes = filteredTweets?.reduce((sum, t) => sum + (t.public_metrics?.like_count || 0), 0) || 0;
+  const totalReposts = filteredTweets?.reduce((sum, t) => sum + (t.public_metrics?.retweet_count || 0), 0) || 0;
+  const totalReplies = filteredTweets?.reduce((sum, t) => sum + (t.public_metrics?.reply_count || 0), 0) || 0;
+  const totalImpressions = filteredTweets?.reduce((sum, t) => sum + (t.public_metrics?.impression_count || 0), 0) || 0;
+  const mentionCount = filteredTweets?.length || 0;
 
   return (
     <SidebarProvider>
@@ -436,47 +456,58 @@ export default function Home() {
                       </Button>
                     </div>
                   )}
-                  {!loading && !error && (!mentions?.data || mentions.data.length === 0) && (
+                  {!loading && !error && (!filteredTweets || filteredTweets.length === 0) && (
                     <div className="p-12 text-center">
                       <AtSign className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
                       <p className="text-muted-foreground">No mentions found for @{username}</p>
                     </div>
                   )}
-                  {!loading && mentions?.data?.slice(0, 5).map((tweet, i) => {
+                  {!loading && filteredTweets?.slice(0, 5).map((tweet, i) => {
                     const user = getUser(tweet.author_id);
                     return (
                       <div key={tweet.id}>
                         {i > 0 && <Separator />}
-                        <a
-                          href={`https://x.com/${user?.username || "x"}/status/${tweet.id}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex gap-3 p-4 hover:bg-muted/50 transition-colors"
-                        >
-                          <Avatar className="h-9 w-9 shrink-0">
-                            <AvatarImage src={user?.profile_image_url} />
-                            <AvatarFallback className="text-xs">
-                              {user?.name?.charAt(0)?.toUpperCase() || "?"}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-1.5">
-                              <span className="font-medium text-sm">{user?.name || "Unknown"}</span>
-                              <span className="text-muted-foreground text-sm">@{user?.username || "unknown"}</span>
-                              <span className="text-muted-foreground text-xs">· {formatDate(tweet.created_at)}</span>
-                            </div>
-                            <p className="text-sm mt-1 leading-relaxed whitespace-pre-wrap break-words line-clamp-2">
-                              {tweet.text}
-                            </p>
-                            {tweet.public_metrics && (
-                              <div className="flex gap-4 mt-2 text-xs text-muted-foreground">
-                                <span className="flex items-center gap-1"><MessageCircle className="h-3 w-3" />{tweet.public_metrics.reply_count}</span>
-                                <span className="flex items-center gap-1"><Repeat2 className="h-3 w-3" />{tweet.public_metrics.retweet_count}</span>
-                                <span className="flex items-center gap-1"><Heart className="h-3 w-3" />{tweet.public_metrics.like_count}</span>
+                        <div className="flex gap-3 p-4 hover:bg-muted/50 transition-colors group">
+                          <a
+                            href={`https://x.com/${user?.username || "x"}/status/${tweet.id}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex gap-3 flex-1 min-w-0"
+                          >
+                            <Avatar className="h-9 w-9 shrink-0">
+                              <AvatarImage src={user?.profile_image_url} />
+                              <AvatarFallback className="text-xs">
+                                {user?.name?.charAt(0)?.toUpperCase() || "?"}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-1.5">
+                                <span className="font-medium text-sm">{user?.name || "Unknown"}</span>
+                                <span className="text-muted-foreground text-sm">@{user?.username || "unknown"}</span>
+                                <span className="text-muted-foreground text-xs">· {formatDate(tweet.created_at)}</span>
                               </div>
-                            )}
-                          </div>
-                        </a>
+                              <p className="text-sm mt-1 leading-relaxed whitespace-pre-wrap break-words line-clamp-2">
+                                {tweet.text}
+                              </p>
+                              {tweet.public_metrics && (
+                                <div className="flex gap-4 mt-2 text-xs text-muted-foreground">
+                                  <span className="flex items-center gap-1"><MessageCircle className="h-3 w-3" />{tweet.public_metrics.reply_count}</span>
+                                  <span className="flex items-center gap-1"><Repeat2 className="h-3 w-3" />{tweet.public_metrics.retweet_count}</span>
+                                  <span className="flex items-center gap-1"><Heart className="h-3 w-3" />{tweet.public_metrics.like_count}</span>
+                                </div>
+                              )}
+                            </div>
+                          </a>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 text-muted-foreground hover:text-destructive"
+                            onClick={() => dismissTweet(tweet.id)}
+                            title="Remove from feed"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
                       </div>
                     );
                   })}
@@ -489,8 +520,21 @@ export default function Home() {
           {activeView === "mentions" && (
             <Card>
               <CardHeader>
-                <CardTitle>All Mentions</CardTitle>
-                <CardDescription>{mentionCount} posts mentioning @{username}</CardDescription>
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <CardTitle>All Mentions</CardTitle>
+                    <CardDescription>{mentionCount} posts mentioning @{username}</CardDescription>
+                  </div>
+                  <div className="relative w-64">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      value={filterText}
+                      onChange={(e) => setFilterText(e.target.value)}
+                      placeholder="Filter mentions..."
+                      className="pl-8"
+                    />
+                  </div>
+                </div>
               </CardHeader>
               <CardContent className="p-0">
                 {loading && (
@@ -507,44 +551,55 @@ export default function Home() {
                     <Button variant="outline" size="sm" className="mt-3" onClick={() => fetchData(username)}>Retry</Button>
                   </div>
                 )}
-                {!loading && !error && (!mentions?.data || mentions.data.length === 0) && (
+                {!loading && !error && (!filteredTweets || filteredTweets.length === 0) && (
                   <div className="p-12 text-center">
                     <AtSign className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
                     <p className="text-muted-foreground">No mentions found</p>
                   </div>
                 )}
-                {!loading && mentions?.data?.map((tweet, i) => {
+                {!loading && filteredTweets?.map((tweet, i) => {
                   const user = getUser(tweet.author_id);
                   return (
                     <div key={tweet.id}>
                       {i > 0 && <Separator />}
-                      <a
-                        href={`https://x.com/${user?.username || "x"}/status/${tweet.id}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex gap-3 p-4 hover:bg-muted/50 transition-colors"
-                      >
-                        <Avatar className="h-10 w-10 shrink-0">
-                          <AvatarImage src={user?.profile_image_url} />
-                          <AvatarFallback>{user?.name?.charAt(0)?.toUpperCase() || "?"}</AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="font-medium text-sm">{user?.name || "Unknown"}</span>
-                            {user?.verified && <Badge variant="secondary" className="text-[10px] px-1 py-0 h-4">Verified</Badge>}
-                            <span className="text-muted-foreground text-sm">@{user?.username || "unknown"}</span>
-                            <span className="text-muted-foreground text-xs">· {formatDate(tweet.created_at)}</span>
-                          </div>
-                          <p className="text-sm mt-1.5 leading-relaxed whitespace-pre-wrap break-words">{tweet.text}</p>
-                          {tweet.public_metrics && (
-                            <div className="flex gap-5 mt-2.5 text-xs text-muted-foreground">
-                              <span className="flex items-center gap-1"><MessageCircle className="h-3 w-3" />{tweet.public_metrics.reply_count} replies</span>
-                              <span className="flex items-center gap-1"><Repeat2 className="h-3 w-3" />{tweet.public_metrics.retweet_count} reposts</span>
-                              <span className="flex items-center gap-1"><Heart className="h-3 w-3" />{tweet.public_metrics.like_count} likes</span>
+                      <div className="flex gap-3 p-4 hover:bg-muted/50 transition-colors group">
+                        <a
+                          href={`https://x.com/${user?.username || "x"}/status/${tweet.id}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex gap-3 flex-1 min-w-0"
+                        >
+                          <Avatar className="h-10 w-10 shrink-0">
+                            <AvatarImage src={user?.profile_image_url} />
+                            <AvatarFallback>{user?.name?.charAt(0)?.toUpperCase() || "?"}</AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="font-medium text-sm">{user?.name || "Unknown"}</span>
+                              {user?.verified && <Badge variant="secondary" className="text-[10px] px-1 py-0 h-4">Verified</Badge>}
+                              <span className="text-muted-foreground text-sm">@{user?.username || "unknown"}</span>
+                              <span className="text-muted-foreground text-xs">· {formatDate(tweet.created_at)}</span>
                             </div>
-                          )}
-                        </div>
-                      </a>
+                            <p className="text-sm mt-1.5 leading-relaxed whitespace-pre-wrap break-words">{tweet.text}</p>
+                            {tweet.public_metrics && (
+                              <div className="flex gap-5 mt-2.5 text-xs text-muted-foreground">
+                                <span className="flex items-center gap-1"><MessageCircle className="h-3 w-3" />{tweet.public_metrics.reply_count} replies</span>
+                                <span className="flex items-center gap-1"><Repeat2 className="h-3 w-3" />{tweet.public_metrics.retweet_count} reposts</span>
+                                <span className="flex items-center gap-1"><Heart className="h-3 w-3" />{tweet.public_metrics.like_count} likes</span>
+                              </div>
+                            )}
+                          </div>
+                        </a>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 text-muted-foreground hover:text-destructive"
+                          onClick={() => dismissTweet(tweet.id)}
+                          title="Remove from feed"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
                     </div>
                   );
                 })}
@@ -601,7 +656,7 @@ export default function Home() {
                 </CardHeader>
                 <CardContent className="space-y-3">
                   {mentions?.includes?.users?.slice(0, 5).map((user, i) => {
-                    const userMentions = mentions.data?.filter((t) => t.author_id === user.id).length || 0;
+                    const userMentions = filteredTweets?.filter((t) => t.author_id === user.id).length || 0;
                     return (
                       <div key={user.id} className="flex items-center gap-3">
                         <span className="text-sm text-muted-foreground w-4">{i + 1}</span>
