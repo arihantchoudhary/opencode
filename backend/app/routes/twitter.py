@@ -1,4 +1,3 @@
-import json
 from datetime import datetime, timezone
 from decimal import Decimal
 
@@ -11,7 +10,6 @@ from app.config import settings
 router = APIRouter(prefix="/api/twitter", tags=["twitter"])
 
 TWITTER_API_BASE = "https://api.twitter.com/2"
-CACHE_KEY = "stardroplin_mentions"
 
 
 def _headers():
@@ -24,7 +22,6 @@ def _get_tweets_table():
 
 
 def _convert_decimals(obj):
-    """Convert Decimal types from DynamoDB back to int/float for JSON."""
     if isinstance(obj, Decimal):
         return int(obj) if obj % 1 == 0 else float(obj)
     if isinstance(obj, dict):
@@ -35,7 +32,6 @@ def _convert_decimals(obj):
 
 
 def _convert_for_dynamo(obj):
-    """Convert floats/ints in nested dicts to Decimal for DynamoDB."""
     if isinstance(obj, float):
         return Decimal(str(obj))
     if isinstance(obj, int) and not isinstance(obj, bool):
@@ -47,11 +43,18 @@ def _convert_for_dynamo(obj):
     return obj
 
 
-def _get_cache():
-    """Read cached mentions from DynamoDB. Returns (data, is_fresh)."""
+def _cache_key_for(username: str) -> str:
+    return f"{username}_mentions"
+
+
+def _user_cache_key(username: str) -> str:
+    return f"{username}_user_id"
+
+
+def _get_cache(username: str):
     table = _get_tweets_table()
     try:
-        resp = table.get_item(Key={"cache_key": CACHE_KEY})
+        resp = table.get_item(Key={"cache_key": _cache_key_for(username)})
     except Exception:
         return None, False
 
@@ -70,22 +73,20 @@ def _get_cache():
     return _convert_decimals(item.get("data")), False
 
 
-def _set_cache(data: dict):
-    """Write mentions data to DynamoDB cache."""
+def _set_cache(username: str, data: dict):
     table = _get_tweets_table()
     now = datetime.now(timezone.utc).isoformat()
     table.put_item(Item={
-        "cache_key": CACHE_KEY,
+        "cache_key": _cache_key_for(username),
         "data": _convert_for_dynamo(data),
         "cached_at": now,
     })
 
 
-def _resolve_user_id() -> str:
-    """Look up @stardroplin user ID, with DynamoDB cache."""
+def _resolve_user_id(username: str) -> str:
     table = _get_tweets_table()
     try:
-        resp = table.get_item(Key={"cache_key": "stardroplin_user_id"})
+        resp = table.get_item(Key={"cache_key": _user_cache_key(username)})
         item = resp.get("Item")
         if item and item.get("user_id"):
             return item["user_id"]
@@ -93,9 +94,9 @@ def _resolve_user_id() -> str:
         pass
 
     resp = requests.get(
-        f"{TWITTER_API_BASE}/users/by/username/stardroplin",
+        f"{TWITTER_API_BASE}/users/by/username/{username}",
         headers=_headers(),
-        params={"user.fields": "id,name,username"},
+        params={"user.fields": "id,name,username,profile_image_url,public_metrics,description"},
         timeout=10,
     )
     if resp.status_code != 200:
@@ -103,24 +104,38 @@ def _resolve_user_id() -> str:
 
     user_data = resp.json().get("data")
     if not user_data:
-        raise HTTPException(status_code=404, detail="Twitter user @stardroplin not found")
+        raise HTTPException(status_code=404, detail=f"Twitter user @{username} not found")
 
     user_id = user_data["id"]
     table.put_item(Item={
-        "cache_key": "stardroplin_user_id",
+        "cache_key": _user_cache_key(username),
         "user_id": user_id,
-        "username": user_data["username"],
-        "name": user_data["name"],
+        "username": user_data.get("username", username),
+        "name": user_data.get("name", ""),
+        "profile_image_url": user_data.get("profile_image_url", ""),
+        "description": user_data.get("description", ""),
+        "public_metrics": _convert_for_dynamo(user_data.get("public_metrics", {})),
     })
     return user_id
 
 
-def _fetch_from_twitter() -> dict:
-    """Fetch fresh mentions from Twitter API and cache them."""
+def _get_cached_profile(username: str) -> dict | None:
+    table = _get_tweets_table()
+    try:
+        resp = table.get_item(Key={"cache_key": _user_cache_key(username)})
+        item = resp.get("Item")
+        if item:
+            return _convert_decimals(item)
+    except Exception:
+        pass
+    return None
+
+
+def _fetch_from_twitter(username: str) -> dict:
     if not settings.twitter_bearer_token:
         raise HTTPException(status_code=503, detail="Twitter API not configured")
 
-    user_id = _resolve_user_id()
+    user_id = _resolve_user_id(username)
 
     params: dict = {
         "max_results": 100,
@@ -143,33 +158,48 @@ def _fetch_from_twitter() -> dict:
         raise HTTPException(status_code=502, detail=f"Twitter API error: {resp.text}")
 
     data = resp.json()
-    _set_cache(data)
+    _set_cache(username, data)
     return data
 
 
-@router.get("/mentions")
-def get_mentions():
+@router.get("/mentions/{username}")
+def get_mentions(username: str):
     """
-    Fetch posts mentioning @stardroplin.
+    Fetch posts mentioning a Twitter user.
     Serves from DynamoDB cache, only calls Twitter API if cache is older than 15 minutes.
     """
-    cached_data, is_fresh = _get_cache()
+    cached_data, is_fresh = _get_cache(username)
 
     if is_fresh and cached_data:
         return cached_data
 
-    # Cache is stale or empty — try to refresh from Twitter
     try:
-        return _fetch_from_twitter()
+        return _fetch_from_twitter(username)
     except HTTPException:
-        # If Twitter call fails but we have stale cache, serve it
         if cached_data:
             return cached_data
         raise
 
 
-@router.post("/refresh")
-def refresh_mentions():
+@router.get("/profile/{username}")
+def get_profile(username: str):
+    """Get cached profile info for a Twitter user."""
+    profile = _get_cached_profile(username)
+    if profile:
+        return profile
+
+    # Force a resolve to populate the cache
+    if not settings.twitter_bearer_token:
+        raise HTTPException(status_code=503, detail="Twitter API not configured")
+    _resolve_user_id(username)
+    profile = _get_cached_profile(username)
+    if profile:
+        return profile
+    raise HTTPException(status_code=404, detail=f"Could not fetch profile for @{username}")
+
+
+@router.post("/refresh/{username}")
+def refresh_mentions(username: str):
     """Force refresh mentions from Twitter API (use sparingly)."""
-    data = _fetch_from_twitter()
+    data = _fetch_from_twitter(username)
     return {"status": "refreshed", "result_count": data.get("meta", {}).get("result_count", 0)}
