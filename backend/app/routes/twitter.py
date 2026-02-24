@@ -142,7 +142,7 @@ def _fetch_from_twitter(username: str) -> dict:
 
     params: dict = {
         "max_results": 100,
-        "tweet.fields": "author_id,created_at,entities,public_metrics,referenced_tweets,text",
+        "tweet.fields": "author_id,conversation_id,created_at,entities,public_metrics,referenced_tweets,text",
         "expansions": "author_id,attachments.media_keys,referenced_tweets.id",
         "user.fields": "name,username,profile_image_url,verified,description",
         "media.fields": "preview_image_url,type,url,width,height",
@@ -289,3 +289,91 @@ def get_dashboard(username: str):
             "total_impressions": total_impressions,
         },
     }
+
+
+@router.get("/thread/{conversation_id}")
+def get_thread(conversation_id: str):
+    """Fetch all tweets in a conversation thread. Cached with same TTL as mentions."""
+    if not settings.twitter_bearer_token:
+        raise HTTPException(status_code=503, detail="Twitter API not configured")
+
+    cache_key = f"thread_{conversation_id}"
+    table = _get_tweets_table()
+
+    # Check cache
+    try:
+        resp = table.get_item(Key={"cache_key": cache_key})
+        item = resp.get("Item")
+        if item and item.get("cached_at"):
+            cached_time = datetime.fromisoformat(item["cached_at"])
+            age_minutes = (datetime.now(timezone.utc) - cached_time).total_seconds() / 60
+            if age_minutes < settings.twitter_cache_ttl_minutes:
+                return _convert_decimals(item.get("data"))
+    except Exception:
+        pass
+
+    # Fetch thread via search API
+    tweet_fields = "author_id,conversation_id,created_at,public_metrics,referenced_tweets,text"
+    user_fields = "name,username,profile_image_url,verified"
+
+    search_resp = requests.get(
+        f"{TWITTER_API_BASE}/tweets/search/recent",
+        headers=_headers(),
+        params={
+            "query": f"conversation_id:{conversation_id}",
+            "max_results": 100,
+            "tweet.fields": tweet_fields,
+            "expansions": "author_id,referenced_tweets.id",
+            "user.fields": user_fields,
+        },
+        timeout=10,
+    )
+
+    if search_resp.status_code == 429:
+        raise HTTPException(status_code=429, detail="Twitter rate limit exceeded")
+    if search_resp.status_code != 200:
+        raise HTTPException(status_code=502, detail=f"Twitter API error: {search_resp.text}")
+
+    search_data = search_resp.json()
+    thread_tweets = search_data.get("data") or []
+    thread_users = search_data.get("includes", {}).get("users") or []
+
+    # Fetch root tweet (search may not include it)
+    root_resp = requests.get(
+        f"{TWITTER_API_BASE}/tweets/{conversation_id}",
+        headers=_headers(),
+        params={
+            "tweet.fields": tweet_fields,
+            "expansions": "author_id",
+            "user.fields": user_fields,
+        },
+        timeout=10,
+    )
+    if root_resp.status_code == 200:
+        root_data = root_resp.json()
+        root_tweet = root_data.get("data")
+        if root_tweet:
+            existing_ids = {t["id"] for t in thread_tweets}
+            if root_tweet["id"] not in existing_ids:
+                thread_tweets.insert(0, root_tweet)
+            for u in root_data.get("includes", {}).get("users") or []:
+                if u["id"] not in {x["id"] for x in thread_users}:
+                    thread_users.append(u)
+
+    thread_tweets.sort(key=lambda t: t.get("created_at", ""))
+
+    result = {
+        "data": thread_tweets,
+        "includes": {"users": thread_users},
+        "conversation_id": conversation_id,
+    }
+
+    # Cache
+    now = datetime.now(timezone.utc).isoformat()
+    table.put_item(Item={
+        "cache_key": cache_key,
+        "data": _convert_for_dynamo(result),
+        "cached_at": now,
+    })
+
+    return result
