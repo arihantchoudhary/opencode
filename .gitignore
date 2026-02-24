@@ -30,7 +30,7 @@ logs/
 # Terraform
 .terraform/
 *.tfstate
-*.tfstate.backup
+*.tfstate.*
 *.tfvars
 !terraform/terraform.tfvars.example
 
@@ -39,3 +39,4 @@ __pycache__/
 *.pyc
 .venv/
 backend/.env
+.vercel
