@@ -78,6 +78,28 @@ def update_user(user_id: str, data: dict) -> dict | None:
     return {**existing, **updates}
 
 
+def append_project(user_id: str, project: dict) -> bool:
+    """Append a project to the user's projects list atomically."""
+    table = _get_table()
+    now = datetime.now(timezone.utc).isoformat()
+    try:
+        table.update_item(
+            Key={"user_id": user_id},
+            UpdateExpression=(
+                "SET projects = list_append(if_not_exists(projects, :empty), :proj), "
+                "updated_at = :now"
+            ),
+            ExpressionAttributeValues={
+                ":proj": [project],
+                ":empty": [],
+                ":now": now,
+            },
+        )
+        return True
+    except Exception:
+        return False
+
+
 def delete_user(user_id: str) -> bool:
     table = _get_table()
     existing = get_user(user_id)

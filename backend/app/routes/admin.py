@@ -1,11 +1,13 @@
 import base64
 import time
+from datetime import datetime, timezone
 
 import jwt
 import requests
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
+from app import db
 from app.config import settings
 
 router = APIRouter(prefix="/admin", tags=["admin"])
@@ -23,8 +25,13 @@ def _generate_jwt() -> str:
     }
     raw = settings.github_app_private_key
     if not raw.startswith("-----"):
-        raw = base64.b64decode(raw).decode()
-    private_key = raw.replace("\\n", "\n")
+        # Try base64 decoding
+        try:
+            raw = base64.b64decode(raw).decode()
+        except Exception:
+            pass
+    # Handle escaped newlines from env vars
+    private_key = raw.replace("\\n", "\n").replace("\\r", "")
     return jwt.encode(payload, private_key, algorithm="RS256")
 
 
@@ -107,6 +114,11 @@ def list_connected_repos():
 class CreateRepoRequest(BaseModel):
     name: str
     description: str = ""
+    tweet_text: str = ""
+    tweet_id: str = ""
+    tweet_author: str = ""
+    tweet_url: str = ""
+    clerk_id: str = ""
 
 
 @router.post("/create-repo")
@@ -156,6 +168,51 @@ def create_repo(body: CreateRepoRequest):
         raise HTTPException(status_code=resp.status_code, detail=detail)
 
     repo = resp.json()
+    repo_full_name = repo["full_name"]
+
+    # Populate README.md with tweet content
+    if body.tweet_text:
+        readme_resp = requests.get(
+            f"{GITHUB_API}/repos/{repo_full_name}/contents/README.md",
+            headers=headers,
+        )
+        if readme_resp.status_code == 200:
+            readme_sha = readme_resp.json()["sha"]
+            readme_content = f"# {body.name}\n\n"
+            readme_content += f"> {body.tweet_text}\n\n"
+            if body.tweet_author:
+                readme_content += f"-- @{body.tweet_author}"
+            if body.tweet_url:
+                readme_content += f" ([source]({body.tweet_url}))"
+            readme_content += "\n"
+
+            encoded = base64.b64encode(readme_content.encode()).decode()
+            requests.put(
+                f"{GITHUB_API}/repos/{repo_full_name}/contents/README.md",
+                headers=headers,
+                json={
+                    "message": "Initialize README with tweet content",
+                    "content": encoded,
+                    "sha": readme_sha,
+                },
+            )
+
+    # Save project to user record
+    if body.clerk_id:
+        user = db.get_user_by_clerk_id(body.clerk_id)
+        if user:
+            project = {
+                "repo_url": repo["html_url"],
+                "repo_name": repo["name"],
+                "full_name": repo_full_name,
+                "tweet_id": body.tweet_id,
+                "tweet_text": body.tweet_text[:280],
+                "tweet_author": body.tweet_author,
+                "tweet_url": body.tweet_url,
+                "created_at": datetime.now(timezone.utc).isoformat(),
+            }
+            db.append_project(user["user_id"], project)
+
     return {
         "html_url": repo["html_url"],
         "full_name": repo["full_name"],

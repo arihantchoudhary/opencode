@@ -21,6 +21,7 @@ class UserUpdate(BaseModel):
     twitter_handle: Optional[str] = None
     dismissed_tweet_ids: Optional[list[str]] = None
     refresh_timestamps: Optional[list[str]] = None
+    projects: Optional[list[dict]] = None
 
 
 class DailyActivity(BaseModel):
@@ -44,6 +45,7 @@ class UserResponse(BaseModel):
     last_login: Optional[str] = None
     dismissed_tweet_ids: Optional[list[str]] = None
     refresh_timestamps: Optional[list[str]] = None
+    projects: Optional[list[dict]] = None
 
 
 class SessionReport(BaseModel):

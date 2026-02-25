@@ -18,6 +18,7 @@ import {
   ExternalLink,
   Github,
   BarChart2,
+  FolderGit2,
 } from "lucide-react";
 import {
   SidebarProvider,
@@ -79,6 +80,17 @@ interface ThreadData {
   data: Tweet[];
   includes: { users: TwitterUser[] };
   conversation_id: string;
+}
+
+interface Project {
+  repo_url: string;
+  repo_name: string;
+  full_name: string;
+  tweet_id: string;
+  tweet_text: string;
+  tweet_author: string;
+  tweet_url: string;
+  created_at: string;
 }
 
 interface ProfileData {
@@ -172,6 +184,9 @@ export default function Home() {
         }
         if (data?.dismissed_tweet_ids?.length) {
           setDismissedIds(new Set(data.dismissed_tweet_ids));
+        }
+        if (data?.projects?.length) {
+          setUserProjects(data.projects);
         }
       })
       .catch((err) => console.error("[Stardrop] Failed to load user settings:", err));
@@ -297,6 +312,7 @@ export default function Home() {
   const [threadLoading, setThreadLoading] = useState(false);
   const [creatingRepo, setCreatingRepo] = useState<string | null>(null);
   const [createdRepoUrl, setCreatedRepoUrl] = useState<Record<string, string>>({});
+  const [userProjects, setUserProjects] = useState<Project[]>([]);
 
   function dismissTweet(id: string) {
     setDismissedIds((prev) => {
@@ -339,14 +355,24 @@ export default function Home() {
     }
   }
 
-  async function createRepo(tweetText: string, tweetId: string) {
+  async function createRepo(tweetText: string, tweetId: string, authorId: string) {
     setCreatingRepo(tweetId);
     try {
       const name = tweetText.slice(0, 50).replace(/[^a-zA-Z0-9-]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "") || "new-repo";
+      const author = getUser(authorId);
+      const tweetUrl = `https://x.com/${author?.username || "x"}/status/${tweetId}`;
       const res = await fetch(`${API_BASE}/admin/create-repo`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, description: tweetText.slice(0, 200) }),
+        body: JSON.stringify({
+          name,
+          description: tweetText.slice(0, 200),
+          tweet_text: tweetText,
+          tweet_id: tweetId,
+          tweet_author: author?.username || "",
+          tweet_url: tweetUrl,
+          clerk_id: clerkUser?.id || "",
+        }),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => null);
@@ -354,6 +380,16 @@ export default function Home() {
       }
       const data = await res.json();
       setCreatedRepoUrl((prev) => ({ ...prev, [tweetId]: data.html_url }));
+      setUserProjects((prev) => [{
+        repo_url: data.html_url,
+        repo_name: data.name,
+        full_name: data.full_name,
+        tweet_id: tweetId,
+        tweet_text: tweetText.slice(0, 280),
+        tweet_author: author?.username || "",
+        tweet_url: tweetUrl,
+        created_at: new Date().toISOString(),
+      }, ...prev]);
     } catch (err) {
       console.error("[Stardrop] Failed to create repo:", err);
     } finally {
@@ -438,6 +474,20 @@ export default function Home() {
                   >
                     <TrendingUp className="h-4 w-4" />
                     <span>Analytics</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    isActive={activeView === "projects"}
+                    onClick={() => setActiveView("projects")}
+                  >
+                    <FolderGit2 className="h-4 w-4" />
+                    <span>Projects</span>
+                    {userProjects.length > 0 && (
+                      <Badge variant="secondary" className="ml-auto text-xs">
+                        {userProjects.length}
+                      </Badge>
+                    )}
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
@@ -549,12 +599,14 @@ export default function Home() {
               {activeView === "dashboard" && "Dashboard"}
               {activeView === "mentions" && "Mentions"}
               {activeView === "analytics" && "Analytics"}
+              {activeView === "projects" && "Projects"}
               {activeView === "settings" && "Settings"}
             </h2>
             <p className="text-muted-foreground">
               {activeView === "dashboard" && `Overview for @${username}`}
               {activeView === "mentions" && `Posts mentioning @${username}`}
               {activeView === "analytics" && `Engagement analytics for @${username}`}
+              {activeView === "projects" && `${userProjects.length} repositories created from tweets`}
               {activeView === "settings" && "Configure your Stardrop dashboard"}
             </p>
           </div>
@@ -769,7 +821,7 @@ export default function Home() {
                                     <ExternalLink className="h-3.5 w-3.5 mr-1.5" />View on Twitter
                                   </a>
                                 </Button>
-                                <Button variant="outline" size="sm" disabled={creatingRepo === tweet.id} onClick={(e) => { e.stopPropagation(); createRepo(tweet.text, tweet.id); }}>
+                                <Button variant="outline" size="sm" disabled={creatingRepo === tweet.id} onClick={(e) => { e.stopPropagation(); createRepo(tweet.text, tweet.id, tweet.author_id); }}>
                                   <Github className="h-3.5 w-3.5 mr-1.5" />
                                   {creatingRepo === tweet.id ? "Creating..." : "Create GitHub Repo"}
                                 </Button>
@@ -924,7 +976,7 @@ export default function Home() {
                                   <ExternalLink className="h-3.5 w-3.5 mr-1.5" />View on Twitter
                                 </a>
                               </Button>
-                              <Button variant="outline" size="sm" disabled={creatingRepo === tweet.id} onClick={(e) => { e.stopPropagation(); createRepo(tweet.text, tweet.id); }}>
+                              <Button variant="outline" size="sm" disabled={creatingRepo === tweet.id} onClick={(e) => { e.stopPropagation(); createRepo(tweet.text, tweet.id, tweet.author_id); }}>
                                 <Github className="h-3.5 w-3.5 mr-1.5" />
                                 {creatingRepo === tweet.id ? "Creating..." : "Create GitHub Repo"}
                               </Button>
@@ -1017,6 +1069,76 @@ export default function Home() {
                   )}
                 </CardContent>
               </Card>
+            </div>
+          )}
+
+          {/* Projects view */}
+          {activeView === "projects" && (
+            <div className="space-y-4">
+              {userProjects.length === 0 ? (
+                <Card>
+                  <CardContent className="p-8 text-center">
+                    <FolderGit2 className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                    <h3 className="text-lg font-medium mb-2">No projects yet</h3>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Create a GitHub repo from any tweet in the Mentions view to get started.
+                    </p>
+                    <Button variant="outline" onClick={() => setActiveView("mentions")}>
+                      View Mentions
+                    </Button>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="grid gap-4 md:grid-cols-2">
+                  {userProjects.map((project) => (
+                    <Card key={project.tweet_id + project.repo_name}>
+                      <CardHeader className="pb-3">
+                        <div className="flex items-center justify-between">
+                          <CardTitle className="text-base">
+                            <a
+                              href={project.repo_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="hover:underline flex items-center gap-2"
+                            >
+                              <Github className="h-4 w-4" />
+                              {project.full_name}
+                            </a>
+                          </CardTitle>
+                          <Badge variant="secondary" className="text-xs">
+                            {formatDate(project.created_at)}
+                          </Badge>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="pt-0 space-y-3">
+                        <p className="text-sm text-muted-foreground line-clamp-3">
+                          {project.tweet_text}
+                        </p>
+                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                          {project.tweet_author && <span>From @{project.tweet_author}</span>}
+                          {project.tweet_url && (
+                            <a
+                              href={project.tweet_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="hover:underline flex items-center gap-1"
+                            >
+                              <ExternalLink className="h-3 w-3" />
+                              View tweet
+                            </a>
+                          )}
+                        </div>
+                        <Button variant="outline" size="sm" asChild>
+                          <a href={project.repo_url} target="_blank" rel="noopener noreferrer">
+                            <Github className="h-3.5 w-3.5 mr-1.5" />
+                            Open Repo
+                          </a>
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
