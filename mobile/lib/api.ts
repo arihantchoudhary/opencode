@@ -1,6 +1,6 @@
 import { MentionsResponse, ProfileData, ThreadData, UserData } from "./types";
 
-const API_BASE = process.env.EXPO_PUBLIC_API_URL || "http://localhost:8000";
+const API_BASE = process.env.EXPO_PUBLIC_API_URL || "https://api.opencode.ai";
 
 export async function fetchMentions(username: string): Promise<MentionsResponse> {
   const res = await fetch(`${API_BASE}/api/twitter/mentions/${username}`);
