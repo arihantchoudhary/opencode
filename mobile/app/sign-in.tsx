@@ -84,6 +84,12 @@ export default function SignInScreen() {
               <Text style={styles.buttonText}>Sign In</Text>
             )}
           </TouchableOpacity>
+
+          <TouchableOpacity onPress={() => router.replace("/sign-up")}>
+            <Text style={styles.link}>
+              Don't have an account? <Text style={styles.linkBold}>Sign up</Text>
+            </Text>
+          </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -124,4 +130,11 @@ const styles = StyleSheet.create({
   },
   buttonDisabled: { opacity: 0.6 },
   buttonText: { color: "#000", fontSize: 16, fontWeight: "700" },
+  link: {
+    color: "#666",
+    fontSize: 14,
+    textAlign: "center",
+    marginTop: 4,
+  },
+  linkBold: { color: "#fff", fontWeight: "600" },
 });
