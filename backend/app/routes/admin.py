@@ -115,7 +115,13 @@ def create_repo(body: CreateRepoRequest):
     if not settings.github_app_id or not settings.github_app_private_key:
         raise HTTPException(status_code=500, detail="GitHub App credentials not configured")
 
-    installation_tokens = _get_installation_tokens()
+    try:
+        installation_tokens = _get_installation_tokens()
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get installation tokens: {e}")
+
     if not installation_tokens:
         raise HTTPException(status_code=500, detail="No GitHub App installations found")
 
@@ -125,8 +131,16 @@ def create_repo(body: CreateRepoRequest):
         "Accept": "application/vnd.github+json",
     }
 
+    account_type = inst["account"].get("type", "User")
+    account_login = inst["account"]["login"]
+
+    if account_type == "Organization":
+        url = f"{GITHUB_API}/orgs/{account_login}/repos"
+    else:
+        url = f"{GITHUB_API}/user/repos"
+
     resp = requests.post(
-        f"{GITHUB_API}/user/repos",
+        url,
         headers=headers,
         json={
             "name": body.name,
@@ -137,7 +151,8 @@ def create_repo(body: CreateRepoRequest):
     )
 
     if resp.status_code not in (200, 201):
-        detail = resp.json().get("message", "Failed to create repository")
+        err = resp.json() if resp.headers.get("content-type", "").startswith("application/json") else {}
+        detail = err.get("message", f"GitHub API error {resp.status_code}")
         raise HTTPException(status_code=resp.status_code, detail=detail)
 
     repo = resp.json()
