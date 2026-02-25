@@ -2,15 +2,22 @@
   "expo": {
     "name": "Stardrop",
     "slug": "stardrop",
+    "owner": "arihantchoudhary",
     "version": "0.1.0",
     "scheme": "stardrop",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "platforms": ["ios", "android"],
+    "platforms": [
+      "ios",
+      "android"
+    ],
     "ios": {
       "bundleIdentifier": "com.stardrop.app",
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "com.stardrop.app",
@@ -19,6 +26,17 @@
         "backgroundColor": "#000000"
       }
     },
-    "plugins": ["expo-router", "expo-secure-store"]
+    "plugins": [
+      "expo-router",
+      "expo-secure-store"
+    ],
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "0c462c56-7b32-4a33-bbec-b8226ae90559"
+      }
+    }
   }
 }
