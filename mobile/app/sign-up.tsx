@@ -12,6 +12,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import OAuthButtons from "../components/OAuthButtons";
 
 export default function SignUpScreen() {
   const { signUp, setActive, isLoaded } = useSignUp();
@@ -131,6 +132,8 @@ export default function SignUpScreen() {
               </TouchableOpacity>
             </>
           )}
+
+          {!pendingVerification && <OAuthButtons />}
 
           <TouchableOpacity onPress={() => router.replace("/sign-in")}>
             <Text style={styles.link}>
