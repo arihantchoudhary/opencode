@@ -15,6 +15,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import {
   fetchMentions,
   fetchProfile,
+  fetchDashboard,
   forceRefresh,
   getUserByClerk,
   formatNumber,
@@ -36,6 +37,16 @@ export default function DashboardTab() {
     setError(null);
     try {
       if (force) await forceRefresh(username);
+
+      // Try dashboard endpoint first
+      const dash = await fetchDashboard(username);
+      if (dash) {
+        if (dash.mentions) setMentions(dash.mentions);
+        if (dash.profile) setProfile(dash.profile);
+        return;
+      }
+
+      // Fallback to separate calls
       const [m, p] = await Promise.allSettled([
         fetchMentions(username),
         fetchProfile(username),
@@ -168,6 +179,7 @@ export default function DashboardTab() {
           {error && <Text style={styles.errorText}>{error}</Text>}
           {filteredTweets?.slice(0, 5).map((tweet) => {
             const author = getUser(tweet.author_id);
+            const hasThread = tweet.conversation_id && tweet.conversation_id !== tweet.id;
             return (
               <TouchableOpacity
                 key={tweet.id}
@@ -188,14 +200,37 @@ export default function DashboardTab() {
                       <Text style={styles.tweetHandle}>@{author?.username}</Text>
                       <Text style={styles.tweetTime}> · {formatDate(tweet.created_at)}</Text>
                     </View>
-                    <Text style={styles.tweetText} numberOfLines={3}>{tweet.text}</Text>
-                    {tweet.public_metrics && (
-                      <View style={styles.tweetMetrics}>
-                        <Text style={styles.metricText}>{tweet.public_metrics.reply_count} replies</Text>
-                        <Text style={styles.metricText}>{tweet.public_metrics.retweet_count} reposts</Text>
-                        <Text style={styles.metricText}>{tweet.public_metrics.like_count} likes</Text>
-                      </View>
+                    {hasThread && (
+                      <Text style={styles.threadIndicator}>↩ In a thread</Text>
                     )}
+                    <Text style={styles.tweetText} numberOfLines={3}>{tweet.text}</Text>
+                    {/* Twitter-style action bar */}
+                    <View style={styles.actionBar}>
+                      <View style={styles.actionItem}>
+                        <Text style={styles.actionIconBlue}>💬</Text>
+                        {tweet.public_metrics?.reply_count ? (
+                          <Text style={styles.actionCountBlue}>{tweet.public_metrics.reply_count}</Text>
+                        ) : null}
+                      </View>
+                      <View style={styles.actionItem}>
+                        <Text style={styles.actionIconGreen}>🔁</Text>
+                        {tweet.public_metrics?.retweet_count ? (
+                          <Text style={styles.actionCountGreen}>{tweet.public_metrics.retweet_count}</Text>
+                        ) : null}
+                      </View>
+                      <View style={styles.actionItem}>
+                        <Text style={styles.actionIconPink}>♥</Text>
+                        {tweet.public_metrics?.like_count ? (
+                          <Text style={styles.actionCountPink}>{tweet.public_metrics.like_count}</Text>
+                        ) : null}
+                      </View>
+                      <View style={styles.actionItem}>
+                        <Text style={styles.actionIconBlue}>📊</Text>
+                        {tweet.public_metrics?.impression_count ? (
+                          <Text style={styles.actionCountBlue}>{formatNumber(tweet.public_metrics.impression_count)}</Text>
+                        ) : null}
+                      </View>
+                    </View>
                   </View>
                 </View>
               </TouchableOpacity>
@@ -277,8 +312,20 @@ const styles = StyleSheet.create({
   tweetName: { fontSize: 14, fontWeight: "600", color: "#fff", flexShrink: 1 },
   tweetHandle: { fontSize: 13, color: "#666", marginLeft: 4 },
   tweetTime: { fontSize: 13, color: "#666" },
+  threadIndicator: { fontSize: 11, color: "#555", marginTop: 2 },
   tweetText: { fontSize: 14, color: "#ccc", lineHeight: 20, marginTop: 6 },
-  tweetMetrics: { flexDirection: "row", gap: 16, marginTop: 8 },
-  metricText: { fontSize: 12, color: "#555" },
+  actionBar: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 10,
+    paddingRight: 20,
+  },
+  actionItem: { flexDirection: "row", alignItems: "center", gap: 4 },
+  actionIconBlue: { fontSize: 13, color: "#666" },
+  actionIconGreen: { fontSize: 13, color: "#666" },
+  actionIconPink: { fontSize: 13, color: "#666" },
+  actionCountBlue: { fontSize: 12, color: "#666" },
+  actionCountGreen: { fontSize: 12, color: "#666" },
+  actionCountPink: { fontSize: 12, color: "#666" },
   emptyText: { color: "#555", textAlign: "center", paddingVertical: 40 },
 });

@@ -1,4 +1,4 @@
-import { MentionsResponse, ProfileData, UserData } from "./types";
+import { MentionsResponse, ProfileData, ThreadData, UserData } from "./types";
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -10,6 +10,12 @@ export async function fetchMentions(username: string): Promise<MentionsResponse>
 
 export async function fetchProfile(username: string): Promise<ProfileData | null> {
   const res = await fetch(`${API_BASE}/api/twitter/profile/${username}`);
+  if (!res.ok) return null;
+  return res.json();
+}
+
+export async function fetchDashboard(username: string): Promise<{ mentions?: MentionsResponse; profile?: ProfileData } | null> {
+  const res = await fetch(`${API_BASE}/api/twitter/dashboard/${username}`);
   if (!res.ok) return null;
   return res.json();
 }
@@ -30,6 +36,33 @@ export async function updateTwitterHandle(clerkId: string, handle: string): Prom
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ twitter_handle: handle }),
   });
+}
+
+export async function loadThread(conversationId: string): Promise<ThreadData | null> {
+  const res = await fetch(`${API_BASE}/api/twitter/thread/${conversationId}`);
+  if (!res.ok) return null;
+  return res.json();
+}
+
+export async function createRepo(body: {
+  name: string;
+  description: string;
+  tweet_text: string;
+  tweet_id: string;
+  tweet_author: string;
+  tweet_url: string;
+  clerk_id: string;
+}): Promise<{ html_url: string; full_name: string; name: string }> {
+  const res = await fetch(`${API_BASE}/admin/create-repo`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => null);
+    throw new Error(err?.detail || "Failed to create repo");
+  }
+  return res.json();
 }
 
 export function formatDate(dateStr: string): string {
