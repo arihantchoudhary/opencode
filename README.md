@@ -487,3 +487,7 @@ terraform/             # Infrastructure as Code
 **Nikki Lin** and **Arihant Choudhary** at City Intelligence, Inc.
 
 Contact: stardroplin@stanford.edu
+
+## Links
+
+- **Privacy Policy**: https://v8esgfss8m.us-east-1.awsapprunner.com/privacy/stardrop
