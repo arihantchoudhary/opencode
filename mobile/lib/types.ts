@@ -20,6 +20,7 @@ export interface TwitterUser {
   username: string;
   profile_image_url?: string;
   verified?: boolean;
+  description?: string;
 }
 
 export interface MentionsResponse {
@@ -46,6 +47,14 @@ export interface ProfileData {
   };
 }
 
+export interface DashboardStats {
+  mention_count: number;
+  total_likes: number;
+  total_reposts: number;
+  total_replies: number;
+  total_impressions: number;
+}
+
 export interface Project {
   repo_url: string;
   repo_name: string;
@@ -66,4 +75,5 @@ export interface UserData {
   avatar_url?: string;
   dismissed_tweet_ids?: string[];
   projects?: Project[];
+  refresh_timestamps?: string[];
 }
