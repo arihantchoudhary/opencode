@@ -29,7 +29,7 @@ import { Tweet, TwitterUser, MentionsResponse, ProfileData, ThreadData } from ".
 
 export default function DashboardTab() {
   const { user: clerkUser } = useUser();
-  const [username] = useState("stardroplin");
+  const [username, setUsername] = useState("");
   const [mentions, setMentions] = useState<MentionsResponse | null>(null);
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [myHandle, setMyHandle] = useState("");
@@ -57,7 +57,20 @@ export default function DashboardTab() {
     return () => clearInterval(timer);
   }, [refreshCooldown]);
 
+  // Fetch user profile and twitter handle from backend
+  useEffect(() => {
+    if (!clerkUser?.id) return;
+    getUserByClerk(clerkUser.id).then((u) => {
+      if (u?.twitter_handle) {
+        setUsername(u.twitter_handle);
+        setMyHandle(u.twitter_handle);
+      }
+      if (u?.dismissed_tweet_ids?.length) setDismissedIds(new Set(u.dismissed_tweet_ids));
+    }).catch(() => {});
+  }, [clerkUser?.id]);
+
   const loadData = useCallback(async (force = false) => {
+    if (!username) return;
     setError(null);
     try {
       if (force) {
@@ -86,15 +99,7 @@ export default function DashboardTab() {
     } catch { setError("Failed to load data"); }
   }, [username, clerkUser?.id]);
 
-  useEffect(() => { setLoading(true); loadData().finally(() => setLoading(false)); }, [loadData]);
-
-  useEffect(() => {
-    if (!clerkUser?.id) return;
-    getUserByClerk(clerkUser.id).then((u) => {
-      if (u?.twitter_handle) setMyHandle(u.twitter_handle);
-      if (u?.dismissed_tweet_ids?.length) setDismissedIds(new Set(u.dismissed_tweet_ids));
-    }).catch(() => {});
-  }, [clerkUser?.id]);
+  useEffect(() => { if (username) { setLoading(true); loadData().finally(() => setLoading(false)); } }, [loadData]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true); await loadData(true); setRefreshing(false);
@@ -158,7 +163,7 @@ export default function DashboardTab() {
   const totalReplies = filteredTweets?.reduce((s, t) => s + (t.public_metrics?.reply_count || 0), 0) || 0;
   const totalImpressions = filteredTweets?.reduce((s, t) => s + (t.public_metrics?.impression_count || 0), 0) || 0;
 
-  if (loading) {
+  if (loading || !username) {
     return (<SafeAreaView style={styles.container}><View style={styles.center}><ActivityIndicator size="large" color="#fff" /></View></SafeAreaView>);
   }
 

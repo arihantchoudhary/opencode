@@ -36,7 +36,7 @@ export default function ProfileTab() {
   const [refreshCooldown, setRefreshCooldown] = useState(0);
   const [mentions, setMentions] = useState<MentionsResponse | null>(null);
   const [loadingAnalytics, setLoadingAnalytics] = useState(true);
-  const username = "stardroplin";
+  const [username, setUsername] = useState("");
 
   useEffect(() => {
     if (refreshCooldown <= 0) return;
@@ -53,17 +53,19 @@ export default function ProfileTab() {
     if (!clerkUser?.id) return;
     setLoadingUser(true);
     getUserByClerk(clerkUser.id).then((u) => {
-      if (u?.twitter_handle) { setTwitterHandle(u.twitter_handle); setInputHandle(u.twitter_handle); }
+      if (u?.twitter_handle) { setTwitterHandle(u.twitter_handle); setInputHandle(u.twitter_handle); setUsername(u.twitter_handle); }
       if (u?.dismissed_tweet_ids?.length) setDismissedCount(u.dismissed_tweet_ids.length);
     }).catch(() => {}).finally(() => setLoadingUser(false));
   }, [clerkUser?.id]);
 
   useEffect(() => {
+    if (!username) return;
     setLoadingAnalytics(true);
     fetchMentions(username).then(setMentions).catch(() => {}).finally(() => setLoadingAnalytics(false));
-  }, []);
+  }, [username]);
 
   const onRefresh = useCallback(async () => {
+    if (!username) return;
     setRefreshing(true);
     try {
       const refreshData = await forceRefresh(username, clerkUser?.id || undefined);
@@ -79,13 +81,13 @@ export default function ProfileTab() {
         }
       }
     } finally { setRefreshing(false); }
-  }, [clerkUser?.id]);
+  }, [username, clerkUser?.id]);
 
   async function handleSave() {
     const trimmed = inputHandle.trim().replace(/^@/, "");
     if (!trimmed || !clerkUser?.id) return;
     setSaving(true);
-    try { await updateTwitterHandle(clerkUser.id, trimmed); setTwitterHandle(trimmed); Alert.alert("Saved", `Twitter handle set to @${trimmed}`); }
+    try { await updateTwitterHandle(clerkUser.id, trimmed); setTwitterHandle(trimmed); setUsername(trimmed); Alert.alert("Saved", `Twitter handle set to @${trimmed}`); }
     catch { Alert.alert("Error", "Failed to save. Try again."); }
     finally { setSaving(false); }
   }

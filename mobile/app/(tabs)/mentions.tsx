@@ -28,7 +28,7 @@ import { Tweet, TwitterUser, MentionsResponse, ThreadData } from "../../lib/type
 
 export default function MentionsTab() {
   const { user: clerkUser } = useUser();
-  const [username] = useState("stardroplin");
+  const [username, setUsername] = useState("");
   const [mentions, setMentions] = useState<MentionsResponse | null>(null);
   const [myHandle, setMyHandle] = useState("");
   const [loading, setLoading] = useState(true);
@@ -55,7 +55,20 @@ export default function MentionsTab() {
     return () => clearInterval(timer);
   }, [refreshCooldown]);
 
+  // Fetch user profile and twitter handle from backend
+  useEffect(() => {
+    if (!clerkUser?.id) return;
+    getUserByClerk(clerkUser.id).then((u) => {
+      if (u?.twitter_handle) {
+        setUsername(u.twitter_handle);
+        setMyHandle(u.twitter_handle);
+      }
+      if (u?.dismissed_tweet_ids?.length) setDismissedIds(new Set(u.dismissed_tweet_ids));
+    }).catch(() => {});
+  }, [clerkUser?.id]);
+
   const loadData = useCallback(async (force = false) => {
+    if (!username) return;
     try {
       if (force) {
         try {
@@ -76,15 +89,7 @@ export default function MentionsTab() {
     } catch {}
   }, [username, clerkUser?.id]);
 
-  useEffect(() => { setLoading(true); loadData().finally(() => setLoading(false)); }, [loadData]);
-
-  useEffect(() => {
-    if (!clerkUser?.id) return;
-    getUserByClerk(clerkUser.id).then((u) => {
-      if (u?.twitter_handle) setMyHandle(u.twitter_handle);
-      if (u?.dismissed_tweet_ids?.length) setDismissedIds(new Set(u.dismissed_tweet_ids));
-    }).catch(() => {});
-  }, [clerkUser?.id]);
+  useEffect(() => { if (username) { setLoading(true); loadData().finally(() => setLoading(false)); } }, [loadData]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true); await loadData(true); setRefreshing(false);
