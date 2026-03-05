@@ -28,7 +28,7 @@ import { Tweet, TwitterUser, MentionsResponse, ThreadData } from "../../lib/type
 
 export default function MentionsTab() {
   const { user: clerkUser } = useUser();
-  const [username, setUsername] = useState("");
+  const [username, setUsername] = useState("stardroplin");
   const [mentions, setMentions] = useState<MentionsResponse | null>(null);
   const [myHandle, setMyHandle] = useState("");
   const [loading, setLoading] = useState(true);
@@ -68,7 +68,6 @@ export default function MentionsTab() {
   }, [clerkUser?.id]);
 
   const loadData = useCallback(async (force = false) => {
-    if (!username) return;
     try {
       if (force) {
         try {
@@ -89,7 +88,7 @@ export default function MentionsTab() {
     } catch {}
   }, [username, clerkUser?.id]);
 
-  useEffect(() => { if (username) { setLoading(true); loadData().finally(() => setLoading(false)); } }, [loadData]);
+  useEffect(() => { setLoading(true); loadData().finally(() => setLoading(false)); }, [loadData]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true); await loadData(true); setRefreshing(false);

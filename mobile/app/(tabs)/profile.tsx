@@ -36,7 +36,7 @@ export default function ProfileTab() {
   const [refreshCooldown, setRefreshCooldown] = useState(0);
   const [mentions, setMentions] = useState<MentionsResponse | null>(null);
   const [loadingAnalytics, setLoadingAnalytics] = useState(true);
-  const [username, setUsername] = useState("");
+  const [username, setUsername] = useState("stardroplin");
 
   useEffect(() => {
     if (refreshCooldown <= 0) return;
@@ -59,13 +59,11 @@ export default function ProfileTab() {
   }, [clerkUser?.id]);
 
   useEffect(() => {
-    if (!username) return;
     setLoadingAnalytics(true);
     fetchMentions(username).then(setMentions).catch(() => {}).finally(() => setLoadingAnalytics(false));
   }, [username]);
 
   const onRefresh = useCallback(async () => {
-    if (!username) return;
     setRefreshing(true);
     try {
       const refreshData = await forceRefresh(username, clerkUser?.id || undefined);
