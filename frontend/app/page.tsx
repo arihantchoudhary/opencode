@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { SignedIn, SignedOut, SignInButton, SignUpButton } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
-import { Star, ArrowRight, AtSign, TrendingUp, Shield } from "lucide-react";
+import { Star, ArrowRight, Twitter, Github, Terminal, Zap } from "lucide-react";
 
 export default function LandingPage() {
   return (
@@ -39,23 +39,24 @@ export default function LandingPage() {
       <section className="max-w-5xl mx-auto px-6 py-24 md:py-32">
         <div className="max-w-2xl">
           <div className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs text-muted-foreground mb-6">
-            <Star className="h-3 w-3" />
-            Now in beta
+            <Zap className="h-3 w-3" />
+            Launching now
           </div>
           <h1 className="text-4xl md:text-5xl font-bold tracking-tight leading-[1.1]">
-            Track every mention.
+            Tweet an idea.
             <br />
-            <span className="text-muted-foreground">Understand your reach.</span>
+            <span className="text-muted-foreground">Ship it with AI.</span>
           </h1>
           <p className="mt-4 text-lg text-muted-foreground max-w-lg">
-            Stardrop monitors Twitter mentions for any account and gives you a
-            clean dashboard with engagement analytics — all in real time.
+            Stardrop turns tweets into working code. See an idea on Twitter,
+            create a GitHub repo with one tap, and let Claude Code build it out
+            — all from your phone.
           </p>
           <div className="mt-8 flex gap-3">
             <SignedOut>
               <SignUpButton>
                 <Button size="lg">
-                  Get started free <ArrowRight className="ml-1.5 h-4 w-4" />
+                  Join the launch <ArrowRight className="ml-1.5 h-4 w-4" />
                 </Button>
               </SignUpButton>
               <SignInButton>
@@ -73,39 +74,53 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Features */}
+      {/* How it works */}
       <section className="border-t bg-muted/30">
         <div className="max-w-5xl mx-auto px-6 py-20">
-          <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-8">Features</h2>
+          <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-8">How it works</h2>
           <div className="grid md:grid-cols-3 gap-8">
             <div>
               <div className="flex h-9 w-9 items-center justify-center rounded-md border bg-background mb-3">
-                <AtSign className="h-4 w-4" />
+                <Twitter className="h-4 w-4" />
               </div>
-              <h3 className="font-medium mb-1">Mention Tracking</h3>
+              <h3 className="font-medium mb-1">1. Find an idea</h3>
               <p className="text-sm text-muted-foreground">
-                See every post that mentions your account, with author details, timestamps, and engagement metrics.
+                Browse your Twitter mentions and replies. When you see an idea worth building, tap &ldquo;Create Repo.&rdquo;
               </p>
             </div>
             <div>
               <div className="flex h-9 w-9 items-center justify-center rounded-md border bg-background mb-3">
-                <TrendingUp className="h-4 w-4" />
+                <Github className="h-4 w-4" />
               </div>
-              <h3 className="font-medium mb-1">Analytics</h3>
+              <h3 className="font-medium mb-1">2. Repo is created</h3>
               <p className="text-sm text-muted-foreground">
-                Track total likes, reposts, replies, and impressions across all your mentions in one place.
+                A GitHub repo is created instantly with the tweet in the README and a CLAUDE.md with build instructions.
               </p>
             </div>
             <div>
               <div className="flex h-9 w-9 items-center justify-center rounded-md border bg-background mb-3">
-                <Shield className="h-4 w-4" />
+                <Terminal className="h-4 w-4" />
               </div>
-              <h3 className="font-medium mb-1">Smart Caching</h3>
+              <h3 className="font-medium mb-1">3. AI builds it</h3>
               <p className="text-sm text-muted-foreground">
-                Results are cached to minimize API usage. Force refresh anytime to pull the latest data.
+                Clone the repo, run <code className="text-xs bg-muted px-1 py-0.5 rounded">stardrop</code>, and Claude Code reads the CLAUDE.md and builds the entire project.
               </p>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* Install */}
+      <section className="border-t">
+        <div className="max-w-5xl mx-auto px-6 py-20">
+          <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-4">Get started</h2>
+          <p className="text-muted-foreground mb-6">Install the Stardrop CLI and start building from ideas.</p>
+          <div className="bg-zinc-950 text-zinc-100 rounded-lg p-4 font-mono text-sm max-w-lg">
+            <span className="text-zinc-500">$</span> curl -fsSL https://stardrop.dev/install | bash
+          </div>
+          <p className="text-xs text-muted-foreground mt-3">
+            Requires <a href="https://claude.ai" className="underline" target="_blank" rel="noopener noreferrer">Claude Code</a> installed locally. Stardrop uses your Claude subscription to build projects.
+          </p>
         </div>
       </section>
 
@@ -113,7 +128,7 @@ export default function LandingPage() {
       <footer className="border-t">
         <div className="max-w-5xl mx-auto px-6 py-6 flex items-center justify-between text-xs text-muted-foreground">
           <span>Stardrop</span>
-          <span>Built with Next.js, shadcn/ui, and the Twitter API</span>
+          <span>Tweet → Repo → Ship</span>
         </div>
       </footer>
     </div>

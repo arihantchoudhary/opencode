@@ -197,6 +197,41 @@ def create_repo(body: CreateRepoRequest):
                 },
             )
 
+    # Add CLAUDE.md so Stardrop/Claude Code knows what to build
+    if body.tweet_text:
+        claude_content = f"""# Project: {body.name}
+
+## Idea
+> {body.tweet_text}
+
+{"— @" + body.tweet_author if body.tweet_author else ""}
+{("[Original tweet](" + body.tweet_url + ")") if body.tweet_url else ""}
+
+## Instructions
+This project was created from a tweet idea. Your job is to turn this idea into a working project.
+
+1. Read the tweet above carefully — it describes what to build
+2. Create the appropriate project structure (choose the right language/framework for the idea)
+3. Implement the core functionality described in the tweet
+4. Add a proper README.md with setup instructions
+5. Make sure the code runs and works
+
+## Guidelines
+- Keep it simple and focused on the core idea
+- Choose modern, well-supported technologies
+- Include a working setup (package.json, requirements.txt, etc.)
+- Write clean, readable code
+"""
+        claude_encoded = base64.b64encode(claude_content.encode()).decode()
+        requests.put(
+            f"{GITHUB_API}/repos/{repo_full_name}/contents/CLAUDE.md",
+            headers=headers,
+            json={
+                "message": "Add CLAUDE.md for Stardrop/Claude Code",
+                "content": claude_encoded,
+            },
+        )
+
     # Save project to user record
     if body.clerk_id:
         user = db.get_user_by_clerk_id(body.clerk_id)
