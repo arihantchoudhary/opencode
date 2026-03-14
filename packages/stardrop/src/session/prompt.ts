@@ -46,6 +46,7 @@ import { LLM } from "./llm"
 import { iife } from "@/util/iife"
 import { Shell } from "@/shell/shell"
 import { Truncate } from "@/tool/truncation"
+import { ClaudeCode } from "./claude-code"
 
 // @ts-ignore
 globalThis.AI_SDK_LOG_WARNINGS = false
@@ -514,6 +515,58 @@ export namespace SessionPrompt {
 
       // normal processing
       const agent = await Agent.get(lastUser.agent)
+
+      // If Claude Code is installed locally, delegate to it
+      if (ClaudeCode.available()) {
+        const lastUserMsg = msgs.findLast((m) => m.info.role === "user")
+        const promptText = lastUserMsg?.parts
+          .filter((p) => p.type === "text" && !p.ignored && !p.synthetic)
+          .map((p) => (p as MessageV2.TextPart).text)
+          .join("\n") ?? ""
+
+        if (promptText.trim()) {
+          const assistantMessage = (await Session.updateMessage({
+            id: Identifier.ascending("message"),
+            parentID: lastUser.id,
+            role: "assistant",
+            mode: "claude-code",
+            agent: agent.name,
+            path: {
+              cwd: Instance.directory,
+              root: Instance.worktree,
+            },
+            cost: 0,
+            tokens: {
+              input: 0,
+              output: 0,
+              reasoning: 0,
+              cache: { read: 0, write: 0 },
+            },
+            modelID: "claude-code",
+            providerID: "claude-code",
+            time: {
+              created: Date.now(),
+            },
+            sessionID,
+          })) as MessageV2.Assistant
+
+          if (step === 1) {
+            SessionSummary.summarize({
+              sessionID,
+              messageID: lastUser.id,
+            })
+          }
+
+          await ClaudeCode.run({
+            sessionID,
+            assistantMessage,
+            prompt: promptText,
+            abort,
+          })
+          break
+        }
+      }
+
       const maxSteps = agent.steps ?? Infinity
       const isLastStep = step >= maxSteps
       msgs = await insertReminders({
