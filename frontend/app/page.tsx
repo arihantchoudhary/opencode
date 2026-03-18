@@ -226,6 +226,77 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Integrations Marquee */}
+      <section className="border-t border-b bg-muted/20 overflow-hidden">
+        <div className="max-w-6xl mx-auto px-6 py-6">
+          <p className="text-[10px] text-muted-foreground uppercase tracking-widest text-center mb-4">We integrate with the tools you already use — and build AI into your apps</p>
+          <div className="flex flex-wrap justify-center gap-x-6 gap-y-3 text-xs text-muted-foreground">
+            {[
+              { name: "OpenAI / GPT-4", category: "ai" },
+              { name: "Anthropic / Claude", category: "ai" },
+              { name: "Google Gemini", category: "ai" },
+              { name: "Cerebras", category: "ai" },
+              { name: "ElevenLabs", category: "ai" },
+              { name: "Mailgun", category: "email" },
+              { name: "AWS SES", category: "email" },
+              { name: "Stripe", category: "payments" },
+              { name: "Mapbox", category: "maps" },
+              { name: "Foursquare", category: "maps" },
+              { name: "AWS App Runner", category: "infra" },
+              { name: "AWS DynamoDB", category: "infra" },
+              { name: "AWS S3", category: "infra" },
+              { name: "Clerk Auth", category: "auth" },
+              { name: "Supabase", category: "db" },
+              { name: "GitHub API", category: "dev" },
+              { name: "Twitter / X API", category: "social" },
+              { name: "LinkedIn API", category: "social" },
+              { name: "Datadog", category: "monitoring" },
+              { name: "Vercel", category: "infra" },
+              { name: "Cloudflare", category: "infra" },
+              { name: "Discord", category: "social" },
+              { name: "Firecrawl", category: "data" },
+              { name: "Mem0", category: "ai" },
+            ].map((integration) => (
+              <span
+                key={integration.name}
+                className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 font-medium transition-colors hover:bg-background ${
+                  integration.category === "ai"
+                    ? "border-violet-200 text-violet-700 dark:border-violet-800 dark:text-violet-400"
+                    : integration.category === "email"
+                    ? "border-rose-200 text-rose-700 dark:border-rose-800 dark:text-rose-400"
+                    : integration.category === "payments"
+                    ? "border-green-200 text-green-700 dark:border-green-800 dark:text-green-400"
+                    : integration.category === "maps"
+                    ? "border-blue-200 text-blue-700 dark:border-blue-800 dark:text-blue-400"
+                    : integration.category === "infra"
+                    ? "border-amber-200 text-amber-700 dark:border-amber-800 dark:text-amber-400"
+                    : integration.category === "auth"
+                    ? "border-cyan-200 text-cyan-700 dark:border-cyan-800 dark:text-cyan-400"
+                    : integration.category === "monitoring"
+                    ? "border-orange-200 text-orange-700 dark:border-orange-800 dark:text-orange-400"
+                    : integration.category === "social"
+                    ? "border-sky-200 text-sky-700 dark:border-sky-800 dark:text-sky-400"
+                    : integration.category === "data"
+                    ? "border-teal-200 text-teal-700 dark:border-teal-800 dark:text-teal-400"
+                    : "border-zinc-200 text-zinc-600 dark:border-zinc-700 dark:text-zinc-400"
+                }`}
+              >
+                {integration.name}
+              </span>
+            ))}
+          </div>
+          <p className="text-[10px] text-muted-foreground text-center mt-4">
+            <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-violet-500" /> AI/ML</span>
+            {" "}<span className="inline-flex items-center gap-1 ml-2"><span className="w-2 h-2 rounded-full bg-rose-500" /> Email</span>
+            {" "}<span className="inline-flex items-center gap-1 ml-2"><span className="w-2 h-2 rounded-full bg-green-500" /> Payments</span>
+            {" "}<span className="inline-flex items-center gap-1 ml-2"><span className="w-2 h-2 rounded-full bg-blue-500" /> Maps</span>
+            {" "}<span className="inline-flex items-center gap-1 ml-2"><span className="w-2 h-2 rounded-full bg-amber-500" /> Infrastructure</span>
+            {" "}<span className="inline-flex items-center gap-1 ml-2"><span className="w-2 h-2 rounded-full bg-sky-500" /> Social</span>
+            {" "}<span className="inline-flex items-center gap-1 ml-2"><span className="w-2 h-2 rounded-full bg-orange-500" /> Monitoring</span>
+          </p>
+        </div>
+      </section>
+
       {/* Delivery Stack */}
       <section className="border-t bg-zinc-950 text-zinc-100">
         <div className="max-w-6xl mx-auto px-6 py-16">
