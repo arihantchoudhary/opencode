@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stardrop — Menlo Inception One-Pager</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #fff;
+    color: #1a1a1a;
+    line-height: 1.5;
+    max-width: 8.5in;
+    margin: 0 auto;
+    padding: 0.4in 0.5in;
+    font-size: 9.5pt;
+  }
+  h1 {
+    font-size: 18pt;
+    font-weight: 800;
+    text-align: center;
+    margin-bottom: 2px;
+    letter-spacing: -0.5px;
+  }
+  .subtitle {
+    text-align: center;
+    font-size: 10pt;
+    color: #555;
+    margin-bottom: 12px;
+    font-style: italic;
+  }
+  h2 {
+    font-size: 10pt;
+    font-weight: 700;
+    color: #1a1a1a;
+    border-bottom: 2px solid #000;
+    padding-bottom: 2px;
+    margin-top: 10px;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .three-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+  }
+  ul {
+    padding-left: 14px;
+    margin: 2px 0;
+  }
+  li {
+    margin-bottom: 2px;
+  }
+  strong { font-weight: 700; }
+  .highlight { background: #f0f7ff; padding: 6px 8px; border-radius: 4px; border-left: 3px solid #2563eb; margin: 4px 0; }
+  .callout { background: #fef3c7; padding: 6px 8px; border-radius: 4px; border-left: 3px solid #d97706; margin: 4px 0; font-weight: 500; }
+  table { width: 100%; border-collapse: collapse; margin: 4px 0; font-size: 8.5pt; }
+  th { background: #111; color: #fff; padding: 4px 6px; text-align: left; font-size: 8pt; text-transform: uppercase; letter-spacing: 0.3px; }
+  td { padding: 3px 6px; border-bottom: 1px solid #e5e5e5; }
+  tr:nth-child(even) td { background: #fafafa; }
+  .tag { display: inline-block; background: #111; color: #fff; padding: 1px 6px; border-radius: 3px; font-size: 7.5pt; font-weight: 600; margin-right: 3px; }
+  .tag-blue { background: #2563eb; }
+  .tag-green { background: #16a34a; }
+  .tag-amber { background: #d97706; }
+  .market-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0; border: 1px solid #ccc; margin: 4px 0; font-size: 8.5pt; }
+  .market-cell { padding: 6px 8px; border: 1px solid #eee; }
+  .market-cell.tl { background: #f9fafb; }
+  .market-cell.tr { background: #f9fafb; }
+  .market-cell.bl { background: #f9fafb; }
+  .market-cell.br { background: #eff6ff; border: 2px solid #2563eb; font-weight: 700; }
+  .axis-label { font-size: 7pt; color: #888; text-transform: uppercase; letter-spacing: 0.5px; }
+  .small { font-size: 8pt; color: #666; }
+  .source { font-size: 7pt; color: #999; }
+  p { margin: 2px 0; }
+  @media print {
+    body { padding: 0.3in 0.4in; }
+    @page { size: letter; margin: 0; }
+  }
+</style>
+</head>
+<body>
+
+<h1>STARDROP</h1>
+<p class="subtitle">Describe it. We build it. &mdash; Web apps. Mobile apps. Companion apps for hardware products.</p>
+
+<div class="two-col">
+<div>
+
+<h2>Why Now</h2>
+<ul>
+  <li><strong>Vibe coding market at inflection</strong>: $3.9B (2024) &rarr; $37B by 2032 at 32.5% CAGR. Multi-agent systems hold ~50% market share; single-agent competitors sit at 30% <span class="source">(Congruence Market Insights)</span></li>
+  <li><strong>Citizen developer explosion</strong>: 30% annual growth in non-developer adoption. 30M+ SMBs need specialized software but cannot afford $50K&ndash;$500K custom dev <span class="source">(Mordor Intelligence)</span></li>
+  <li><strong>Week Four Crisis</strong>: &gt;30% of startups built MVPs with vibe coding, but prototypes collapse under real-world usage &mdash; no deterministic architecture</li>
+  <li><strong>Deployment gap</strong>: Every vibe coding tool stops at code generation. Nobody deploys to AWS, sets up Datadog, or configures CI/CD. <strong>We do.</strong></li>
+</ul>
+
+<h2>Needs / Pain Points</h2>
+<ul>
+  <li><strong>Non-devs locked out of complex apps</strong> &mdash; Lovable, Bolt, Replit handle landing pages but break on multi-API workflows and domain logic</li>
+  <li><strong>SMBs overpay</strong> &mdash; A healthcare practice manager faces: $50K+ dev agency or a generic template with no medical logic</li>
+  <li><strong>Code without deployment = useless</strong> &mdash; Competitors hand you React code. You still need deploy, DB, monitoring, maintenance. That's 80% of the work</li>
+  <li><strong>Zero domain intelligence</strong> &mdash; Every tool produces identical output regardless of industry</li>
+</ul>
+
+<h2>Target Customers</h2>
+<p><span class="tag">CONSUMER</span> <strong>"The Dreamer"</strong> &mdash; Gen Z / millennials (18&ndash;30) on X, TikTok, Product Hunt. Side projects, hackathons. <em>LTV: $15&ndash;40/mo.</em> Products: theTravelGPT, Hunchie</p>
+<p><span class="tag tag-blue">PROFESSIONAL</span> <strong>"The Operator"</strong> &mdash; Mid-career (30&ndash;50) in healthcare, finance, events, hospitality. Dept heads, practice managers. <strong>Not developers.</strong> Need domain-specific logic, data sources, compliance. <em>LTV: $200+/mo.</em> Products: Canopy, Selecta</p>
+
+<h2>North Star</h2>
+<p>Anyone &mdash; regardless of technical skill &mdash; describes a complex, domain-specific application in plain English and receives a <strong>production-grade, fully deployed and monitored product</strong>. Not code. Not a prototype. A running business on their own infrastructure.</p>
+
+<h2>Competitive Landscape</h2>
+<div class="market-grid">
+  <div class="market-cell tl">
+    <p class="axis-label">High skill + Low complexity</p>
+    <p>Cursor, Windsurf, GitHub Copilot</p>
+  </div>
+  <div class="market-cell tr">
+    <p class="axis-label">High skill + High complexity</p>
+    <p>Traditional Dev Agencies ($50K&ndash;$500K+)</p>
+  </div>
+  <div class="market-cell bl">
+    <p class="axis-label">Low skill + Low complexity</p>
+    <p>Lovable, Bolt, Replit, Base44, v0</p>
+  </div>
+  <div class="market-cell br">
+    <p class="axis-label">Low skill + High complexity</p>
+    <p>&#9733; STARDROP &#9733;<br><span class="small">(The only player)</span></p>
+  </div>
+</div>
+<p class="small">Low-skill tools output code for simple apps. High-skill tools require devs. Complex deployed apps for non-devs? Only $50K+ agencies. <strong>Stardrop is the only platform in this quadrant &mdash; AND the only one that deploys, monitors, and maintains.</strong></p>
+
+</div>
+<div>
+
+<h2>Gap / Value Proposition</h2>
+<ul>
+  <li><strong>Full-stack delivery, not just code</strong> &mdash; Build &rarr; Docker &rarr; ECR &rarr; AWS App Runner &rarr; DynamoDB &rarr; Datadog monitoring &rarr; GitHub Actions CI/CD &rarr; custom domain</li>
+  <li><strong>Domain intelligence</strong> &mdash; Adapts to healthcare compliance (Canopy), travel logistics (TravelGPT), event management (Selecta), hardware integration (Hunchie)</li>
+  <li><strong>Multi-agent orchestration</strong> &mdash; Best model per task (planning, coding, testing, integration). Not a single LLM wrapper</li>
+  <li><strong>Proven across 4 verticals</strong> &mdash; AI pipelines, data enrichment, domain logic, hardware companion</li>
+  <li><strong>10x price-performance</strong> &mdash; $15/mo vs. $25/mo competitors. $200/mo vs. $50K+ agencies</li>
+</ul>
+
+<h2>Market Size</h2>
+<div class="three-col">
+  <div class="highlight"><strong>TAM</strong><br>$37B by 2032<br><span class="small">32.5% CAGR</span></div>
+  <div class="highlight"><strong>SAM</strong><br>$18.5B<br><span class="small">~50% multi-agent share</span></div>
+  <div class="highlight"><strong>SOM (Y1)</strong><br>$300K ARR<br><span class="small">200 users, $25K MRR</span></div>
+</div>
+
+<h2>MVPs (Live Today)</h2>
+<table>
+  <tr><th>Product</th><th>Domain</th><th>Differentiator</th><th>Infra</th></tr>
+  <tr>
+    <td><strong>theTravelGPT</strong></td>
+    <td>Travel</td>
+    <td><span class="tag tag-blue">AI Pipeline</span> GPT-4 + Mapbox + Foursquare + email. 550+ destinations. $2K paid client. Switched FROM Lovable.</td>
+    <td>Vercel, FastAPI</td>
+  </tr>
+  <tr>
+    <td><strong>Selecta</strong></td>
+    <td>Events/VC</td>
+    <td><span class="tag tag-green">Data Enrichment</span> LinkedIn/GitHub profile scraping + multi-criteria AI ranking</td>
+    <td>Vercel, Clerk</td>
+  </tr>
+  <tr>
+    <td><strong>Canopy</strong></td>
+    <td>Healthcare</td>
+    <td><span class="tag tag-amber">Domain Logic</span> Cancer patient &rarr; support matching. 2,000+ providers, 500+ sites</td>
+    <td><strong>AWS App Runner + ECR + DynamoDB</strong></td>
+  </tr>
+  <tr>
+    <td><strong>Hunchie</strong></td>
+    <td>Hardware</td>
+    <td><span class="tag">IoT Companion</span> Bluetooth posture tracker. Physical product integration</td>
+    <td>Netlify, BLE</td>
+  </tr>
+</table>
+<p class="small"><strong>+ 40 more apps</strong> created from tweet mentions: golf tee-times, dessert recipes, campus parking, gym tracker, e-reader, leetcode feed, sitar audio processor, Stanford lecture finder&hellip;</p>
+
+<h2>Business Model</h2>
+<table>
+  <tr><th>Tier</th><th>Price</th><th>Positioning</th></tr>
+  <tr><td><strong>FREE</strong></td><td>$0/mo</td><td>1 wish/month. "Built with Stardrop" badge = viral billboard</td></tr>
+  <tr><td><strong>STAR</strong></td><td>$15/mo</td><td>5 wishes, multi-agent. <em>vs. Bolt/Lovable at $25/mo</em></td></tr>
+  <tr><td><strong>CONSTELLATION</strong></td><td>$40/mo</td><td>Unlimited wishes, API integrations, collaboration</td></tr>
+  <tr><td><strong>SUPERNOVA</strong></td><td>$200/mo</td><td>10 seats, white-label, AWS deploy + Datadog. <em>vs. agencies at $50K+</em></td></tr>
+</table>
+<p class="small"><strong>GTM</strong>: Tag @stardrop on X &rarr; we build it &rarr; badge drives discovery. 40+ apps created this way. Infra: ~$300&ndash;1K/mo (serverless). Target: 60&ndash;70% gross margin.</p>
+
+<h2>Key Risks / Open Questions</h2>
+<ul>
+  <li><strong>Concierge &rarr; self-serve</strong> &mdash; Can we ship self-serve by M4 without quality loss?</li>
+  <li><strong>Vertical vs. horizontal</strong> &mdash; Deep in 2&ndash;3 verticals or stay broad?</li>
+  <li><strong>Multi-agent costs</strong> &mdash; Maintain 60%+ margins as complexity grows?</li>
+  <li><strong>Competitor response</strong> &mdash; Lovable/Bolt adding multi-agent = 12&ndash;18mo rebuild</li>
+  <li><strong>Enterprise readiness</strong> &mdash; SOC 2, SSO, audit logs for $200/mo tier</li>
+</ul>
+
+<h2>Founder</h2>
+<p><strong>Arihant Choudhary</strong> &mdash; Solo-founder, City Intelligence, Inc. (1.5 yrs)</p>
+<p>BS UC Berkeley + MS Stanford CS (graduated early, self-funded). 7 yrs: Cerebras (Series H), Intel. 3 papers: ACM SIGCSE '24 &amp; '25, ICML '26. Shipped 4+ production apps across 4 verticals with real AWS infrastructure and users.</p>
+<p class="small" style="margin-top: 6px;">arihant@berkeley.edu &nbsp;|&nbsp; <a href="https://linkedin.com/in/arihantchoudhary">LinkedIn</a> &nbsp;|&nbsp; <a href="https://github.com/stardrop-cli/stardrop-cli">GitHub</a> &nbsp;|&nbsp; @stardrop on X</p>
+
+</div>
+</div>
+
+</body>
+</html>
