@@ -232,6 +232,18 @@ This project was created from a tweet idea. Your job is to turn this idea into a
             },
         )
 
+    # Create standard directory structure (frontend, backend, infra, app)
+    for folder in ["frontend", "backend", "infra", "app"]:
+        gitkeep_encoded = base64.b64encode(b"").decode()
+        requests.put(
+            f"{GITHUB_API}/repos/{repo_full_name}/contents/{folder}/.gitkeep",
+            headers=headers,
+            json={
+                "message": f"Add {folder}/ directory",
+                "content": gitkeep_encoded,
+            },
+        )
+
     # Save project to user record
     if body.clerk_id:
         user = db.get_user_by_clerk_id(body.clerk_id)
