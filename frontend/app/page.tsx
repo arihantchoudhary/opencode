@@ -193,7 +193,7 @@ export default function LandingPage() {
             40+ apps shipped from tweets
           </div>
           <h1 className="text-4xl md:text-5xl font-bold tracking-tight leading-[1.1]">
-            Describe it.
+            Describe it on Twitter.
             <br />
             <span className="text-muted-foreground">We build it.</span>
           </h1>
@@ -573,7 +573,7 @@ export default function LandingPage() {
             <a href="https://twitter.com/stardrop" target="_blank" rel="noopener noreferrer" className="hover:text-foreground">
               <Twitter className="h-3.5 w-3.5" />
             </a>
-            <span>Describe it. We build it.</span>
+            <span>Describe it on Twitter. We build it.</span>
           </div>
         </div>
       </footer>
