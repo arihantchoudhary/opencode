@@ -26,7 +26,7 @@ export const { use: useRoute, provider: RouteProvider } = createSimpleContext({
       process.env["STARDROP_ROUTE"]
         ? JSON.parse(process.env["STARDROP_ROUTE"])
         : {
-            type: "home",
+            type: "chat",
           },
     )
 

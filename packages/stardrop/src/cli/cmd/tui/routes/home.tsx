@@ -52,7 +52,6 @@ export function Home() {
         </box>
         <box paddingTop={3} maxWidth={75} gap={1}>
           <box flexDirection="row">
-            <text fg={theme.textMuted}>1. </text>
             <text
               fg={theme.primary}
               onMouseUp={() => {
@@ -60,14 +59,7 @@ export function Home() {
                 else dialog.replace(() => <DialogProviderList />)
               }}
             >
-              Demo
-            </text>
-            <text fg={theme.textMuted}> — try with your own API key</text>
-          </box>
-          <box flexDirection="row">
-            <text fg={theme.textMuted}>2. </text>
-            <text fg={theme.textMuted}>
-              Email <span style={{ fg: theme.primary }}>stardroplin@stanford.edu</span> to discuss plans
+              Start chatting →
             </text>
           </box>
         </box>
