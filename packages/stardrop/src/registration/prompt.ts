@@ -1,6 +1,5 @@
 import * as prompts from "@clack/prompts"
 import { Registration } from "."
-import { Auth } from "../auth"
 import { Log } from "../util/log"
 
 const API_URL = "https://p9ia72yajp.us-east-1.awsapprunner.com"
@@ -16,15 +15,10 @@ const REFERENCE_OPTIONS = [
   { label: "Other", value: "other" },
 ]
 
-const PROVIDER_OPTIONS = [
-  { label: "Anthropic", value: "anthropic" },
-  { label: "OpenAI", value: "openai" },
-  { label: "Google", value: "google" },
-]
-
 /**
  * Login flow that runs on every launch.
- * Collects name, email, and API key.
+ * Collects name and email. API keys are resolved from environment variables
+ * or can be added later via `stardrop auth`.
  */
 export async function promptLogin() {
   const existing = await Registration.get()
@@ -73,29 +67,7 @@ export async function promptLogin() {
     reference = ref
   }
 
-  // Step 4: API key
-  const provider = await prompts.select({
-    message: "Which provider?",
-    options: PROVIDER_OPTIONS,
-  })
-  if (prompts.isCancel(provider)) {
-    prompts.outro("An API key is required to use Stardrop.")
-    process.exit(0)
-  }
-
-  const apiKey = await prompts.text({
-    message: `Enter your ${PROVIDER_OPTIONS.find((p) => p.value === provider)?.label} API key`,
-    placeholder: "sk-...",
-    validate: (v) => {
-      if (!v || v.trim().length === 0) return "API key is required"
-    },
-  })
-  if (prompts.isCancel(apiKey)) {
-    prompts.outro("An API key is required to use Stardrop.")
-    process.exit(0)
-  }
-
-  // Step 5: Register with backend + save locally
+  // Step 4: Register with backend + save locally
   const spinner = prompts.spinner()
   spinner.start("Logging in...")
 
@@ -158,11 +130,8 @@ export async function promptLogin() {
     })
   }
 
-  // Save API key
-  await Auth.set(provider, { type: "api", key: apiKey })
-
   spinner.stop("Logged in!")
-  prompts.outro("You're all set!")
+  prompts.outro("You're all set! Set your API key via environment variable (e.g. ANTHROPIC_API_KEY) or run `stardrop auth`.")
 }
 
 /**
