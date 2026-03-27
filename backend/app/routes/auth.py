@@ -12,7 +12,8 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 def signup(body: UserCreate):
     existing = db.get_user_by_email(body.email)
     if existing:
-        raise HTTPException(400, "Email already registered")
+        # Return existing user instead of 400 so the CLI always gets user_id
+        return existing
     return db.create_user(body.model_dump())
 
 

@@ -122,9 +122,24 @@ export async function promptLogin() {
         registered_at: new Date().toISOString(),
       })
     } else {
+      // Signup returned non-OK (e.g. user already exists) — try to get user_id via login
       const err = await response.json().catch(() => ({}))
-      log.warn("registration API error", { status: response.status, err })
+      log.warn("registration API error, trying login fallback", { status: response.status, err })
+      let userId: string | undefined
+      try {
+        const loginRes = await fetch(`${API_URL}/auth/login?email=${encodeURIComponent(email)}`, {
+          method: "POST",
+          signal: AbortSignal.timeout(10_000),
+        })
+        if (loginRes.ok) {
+          const loginData = await loginRes.json()
+          userId = loginData.user_id
+        }
+      } catch {
+        log.warn("login fallback also failed")
+      }
       await Registration.set({
+        user_id: userId,
         email,
         name,
         reference,
