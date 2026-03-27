@@ -19,6 +19,14 @@ import {
   Github,
   BarChart2,
   FolderGit2,
+  Activity,
+  Clock,
+  CheckCircle2,
+  XCircle,
+  Play,
+  Terminal,
+  Users,
+  Calendar,
 } from "lucide-react";
 import {
   SidebarProvider,
@@ -93,6 +101,22 @@ interface Project {
   created_at: string;
 }
 
+interface Session {
+  session_id: string;
+  user_id: string;
+  user_email: string;
+  user_name: string;
+  title: string;
+  project_id: string;
+  directory: string;
+  version: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+  completed_at?: string;
+  summary?: Record<string, unknown>;
+}
+
 interface ProfileData {
   name?: string;
   username?: string;
@@ -155,6 +179,21 @@ export default function Home() {
   const [refreshRemaining, setRefreshRemaining] = useState(4);
   const [refreshResetAt, setRefreshResetAt] = useState<Date | null>(null);
   const [refreshCooldown, setRefreshCooldown] = useState(0);
+  const [sessions, setSessions] = useState<Session[]>([]);
+  const [sessionsLoading, setSessionsLoading] = useState(false);
+  const [expandedSessionId, setExpandedSessionId] = useState<string | null>(null);
+
+  // Fetch all sessions
+  useEffect(() => {
+    setSessionsLoading(true);
+    fetch(`${API_BASE}/sessions/?limit=100`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (Array.isArray(data)) setSessions(data);
+      })
+      .catch((err) => console.error("[Stardrop] Failed to load sessions:", err))
+      .finally(() => setSessionsLoading(false));
+  }, []);
 
   // Countdown timer for rate limit cooldown
   useEffect(() => {
@@ -312,6 +351,8 @@ export default function Home() {
   const [threadLoading, setThreadLoading] = useState(false);
   const [creatingRepo, setCreatingRepo] = useState<string | null>(null);
   const [createdRepoUrl, setCreatedRepoUrl] = useState<Record<string, string>>({});
+  const [namingRepo, setNamingRepo] = useState<string | null>(null);
+  const [repoNameInput, setRepoNameInput] = useState("");
   const [userProjects, setUserProjects] = useState<Project[]>([]);
 
   function dismissTweet(id: string) {
@@ -355,10 +396,20 @@ export default function Home() {
     }
   }
 
-  async function createRepo(tweetText: string, tweetId: string, authorId: string) {
+  function slugify(text: string) {
+    return text.slice(0, 50).replace(/[^a-zA-Z0-9-]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "") || "new-repo";
+  }
+
+  function startNamingRepo(tweetText: string, tweetId: string) {
+    setNamingRepo(tweetId);
+    setRepoNameInput(slugify(tweetText));
+  }
+
+  async function createRepo(tweetText: string, tweetId: string, authorId: string, customName?: string) {
+    setNamingRepo(null);
     setCreatingRepo(tweetId);
     try {
-      const name = tweetText.slice(0, 50).replace(/[^a-zA-Z0-9-]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "") || "new-repo";
+      const name = customName?.trim() ? customName.trim().replace(/[^a-zA-Z0-9-_.]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "") : slugify(tweetText);
       const author = getUser(authorId);
       const tweetUrl = `https://x.com/${author?.username || "x"}/status/${tweetId}`;
       const res = await fetch(`${API_BASE}/admin/create-repo`, {
@@ -474,6 +525,20 @@ export default function Home() {
                   >
                     <TrendingUp className="h-4 w-4" />
                     <span>Analytics</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    isActive={activeView === "sessions"}
+                    onClick={() => setActiveView("sessions")}
+                  >
+                    <Terminal className="h-4 w-4" />
+                    <span>Sessions</span>
+                    {sessions.length > 0 && (
+                      <Badge variant="secondary" className="ml-auto text-xs">
+                        {sessions.length}
+                      </Badge>
+                    )}
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
@@ -599,6 +664,7 @@ export default function Home() {
               {activeView === "dashboard" && "Dashboard"}
               {activeView === "mentions" && "Mentions"}
               {activeView === "analytics" && "Analytics"}
+              {activeView === "sessions" && "Sessions"}
               {activeView === "projects" && "Projects"}
               {activeView === "settings" && "Settings"}
             </h2>
@@ -606,6 +672,7 @@ export default function Home() {
               {activeView === "dashboard" && `Overview for @${username}`}
               {activeView === "mentions" && `Posts mentioning @${username}`}
               {activeView === "analytics" && `Engagement analytics for @${username}`}
+              {activeView === "sessions" && `${sessions.length} agent sessions logged`}
               {activeView === "projects" && `${userProjects.length} repositories created from tweets`}
               {activeView === "settings" && "Configure your Stardrop dashboard"}
             </p>
@@ -821,10 +888,18 @@ export default function Home() {
                                     <ExternalLink className="h-3.5 w-3.5 mr-1.5" />View on Twitter
                                   </a>
                                 </Button>
-                                <Button variant="outline" size="sm" disabled={creatingRepo === tweet.id} onClick={(e) => { e.stopPropagation(); createRepo(tweet.text, tweet.id, tweet.author_id); }}>
-                                  <Github className="h-3.5 w-3.5 mr-1.5" />
-                                  {creatingRepo === tweet.id ? "Creating..." : "Create GitHub Repo"}
-                                </Button>
+                                {namingRepo === tweet.id ? (
+                                  <form className="flex items-center gap-1.5" onSubmit={(e) => { e.preventDefault(); e.stopPropagation(); createRepo(tweet.text, tweet.id, tweet.author_id, repoNameInput); }} onClick={(e) => e.stopPropagation()}>
+                                    <Input className="h-7 text-xs w-48" value={repoNameInput} onChange={(e) => setRepoNameInput(e.target.value)} placeholder="repo-name" autoFocus />
+                                    <Button type="submit" variant="outline" size="sm" className="h-7 text-xs">Create</Button>
+                                    <Button type="button" variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setNamingRepo(null)}>Cancel</Button>
+                                  </form>
+                                ) : (
+                                  <Button variant="outline" size="sm" disabled={creatingRepo === tweet.id} onClick={(e) => { e.stopPropagation(); startNamingRepo(tweet.text, tweet.id); }}>
+                                    <Github className="h-3.5 w-3.5 mr-1.5" />
+                                    {creatingRepo === tweet.id ? "Creating..." : "Create GitHub Repo"}
+                                  </Button>
+                                )}
                                 {createdRepoUrl[tweet.id] && (
                                   <a href={createdRepoUrl[tweet.id]} target="_blank" rel="noopener noreferrer" className="text-xs text-green-600 hover:underline" onClick={(e) => e.stopPropagation()}>
                                     Repo created ↗
@@ -976,10 +1051,18 @@ export default function Home() {
                                   <ExternalLink className="h-3.5 w-3.5 mr-1.5" />View on Twitter
                                 </a>
                               </Button>
-                              <Button variant="outline" size="sm" disabled={creatingRepo === tweet.id} onClick={(e) => { e.stopPropagation(); createRepo(tweet.text, tweet.id, tweet.author_id); }}>
-                                <Github className="h-3.5 w-3.5 mr-1.5" />
-                                {creatingRepo === tweet.id ? "Creating..." : "Create GitHub Repo"}
-                              </Button>
+                              {namingRepo === tweet.id ? (
+                                <form className="flex items-center gap-1.5" onSubmit={(e) => { e.preventDefault(); e.stopPropagation(); createRepo(tweet.text, tweet.id, tweet.author_id, repoNameInput); }} onClick={(e) => e.stopPropagation()}>
+                                  <Input className="h-7 text-xs w-48" value={repoNameInput} onChange={(e) => setRepoNameInput(e.target.value)} placeholder="repo-name" autoFocus />
+                                  <Button type="submit" variant="outline" size="sm" className="h-7 text-xs">Create</Button>
+                                  <Button type="button" variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setNamingRepo(null)}>Cancel</Button>
+                                </form>
+                              ) : (
+                                <Button variant="outline" size="sm" disabled={creatingRepo === tweet.id} onClick={(e) => { e.stopPropagation(); startNamingRepo(tweet.text, tweet.id); }}>
+                                  <Github className="h-3.5 w-3.5 mr-1.5" />
+                                  {creatingRepo === tweet.id ? "Creating..." : "Create GitHub Repo"}
+                                </Button>
+                              )}
                               {createdRepoUrl[tweet.id] && (
                                 <a href={createdRepoUrl[tweet.id]} target="_blank" rel="noopener noreferrer" className="text-xs text-green-600 hover:underline" onClick={(e) => e.stopPropagation()}>
                                   Repo created ↗
@@ -1071,6 +1154,337 @@ export default function Home() {
               </Card>
             </div>
           )}
+
+          {/* Sessions view */}
+          {activeView === "sessions" && (() => {
+            const activeSessions = sessions.filter((s) => s.status === "active" || s.status === "running");
+            const completedSessions = sessions.filter((s) => s.status === "completed" || s.status === "done");
+            const failedSessions = sessions.filter((s) => s.status === "failed" || s.status === "error");
+            const todaySessions = sessions.filter((s) => {
+              const d = s.created_at?.slice(0, 10);
+              return d === new Date().toISOString().slice(0, 10);
+            });
+            const uniqueUsers = new Set(sessions.map((s) => s.user_id)).size;
+            const uniqueProjects = new Set(sessions.filter((s) => s.project_id).map((s) => s.project_id)).size;
+
+            function sessionDuration(s: Session) {
+              if (!s.created_at) return null;
+              const end = s.completed_at || s.updated_at;
+              if (!end) return null;
+              const ms = new Date(end).getTime() - new Date(s.created_at).getTime();
+              if (ms < 0) return null;
+              if (ms < 60000) return `${Math.round(ms / 1000)}s`;
+              if (ms < 3600000) return `${Math.round(ms / 60000)}m`;
+              return `${(ms / 3600000).toFixed(1)}h`;
+            }
+
+            function statusColor(status: string) {
+              if (status === "active" || status === "running") return "bg-green-500";
+              if (status === "completed" || status === "done") return "bg-gray-400";
+              if (status === "failed" || status === "error") return "bg-red-500";
+              return "bg-yellow-500";
+            }
+
+            function statusIcon(status: string) {
+              if (status === "active" || status === "running") return <Play className="h-3.5 w-3.5 text-green-500" />;
+              if (status === "completed" || status === "done") return <CheckCircle2 className="h-3.5 w-3.5 text-gray-400" />;
+              if (status === "failed" || status === "error") return <XCircle className="h-3.5 w-3.5 text-red-500" />;
+              return <Clock className="h-3.5 w-3.5 text-yellow-500" />;
+            }
+
+            return (
+              <div className="space-y-6">
+                {/* Stats cards */}
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardDescription className="text-sm font-medium">Total Sessions</CardDescription>
+                      <Terminal className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{sessionsLoading ? <Skeleton className="h-8 w-16" /> : sessions.length}</div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardDescription className="text-sm font-medium">Active Now</CardDescription>
+                      <Activity className="h-4 w-4 text-green-500" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold text-green-600">{sessionsLoading ? <Skeleton className="h-8 w-16" /> : activeSessions.length}</div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardDescription className="text-sm font-medium">Today</CardDescription>
+                      <Calendar className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{sessionsLoading ? <Skeleton className="h-8 w-16" /> : todaySessions.length}</div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardDescription className="text-sm font-medium">Unique Users</CardDescription>
+                      <Users className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{sessionsLoading ? <Skeleton className="h-8 w-16" /> : uniqueUsers}</div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Breakdown row */}
+                <div className="grid gap-4 md:grid-cols-3">
+                  <Card>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-base">Status Breakdown</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="h-2.5 w-2.5 rounded-full bg-green-500" />
+                          <span className="text-sm">Active</span>
+                        </div>
+                        <span className="font-semibold">{activeSessions.length}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="h-2.5 w-2.5 rounded-full bg-gray-400" />
+                          <span className="text-sm">Completed</span>
+                        </div>
+                        <span className="font-semibold">{completedSessions.length}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="h-2.5 w-2.5 rounded-full bg-red-500" />
+                          <span className="text-sm">Failed</span>
+                        </div>
+                        <span className="font-semibold">{failedSessions.length}</span>
+                      </div>
+                      {sessions.length > 0 && (
+                        <div className="pt-2">
+                          <div className="flex h-2 rounded-full overflow-hidden bg-muted">
+                            {activeSessions.length > 0 && (
+                              <div className="bg-green-500" style={{ width: `${(activeSessions.length / sessions.length) * 100}%` }} />
+                            )}
+                            {completedSessions.length > 0 && (
+                              <div className="bg-gray-400" style={{ width: `${(completedSessions.length / sessions.length) * 100}%` }} />
+                            )}
+                            {failedSessions.length > 0 && (
+                              <div className="bg-red-500" style={{ width: `${(failedSessions.length / sessions.length) * 100}%` }} />
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-base">Top Projects</CardTitle>
+                      <CardDescription>{uniqueProjects} unique projects</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      {Object.entries(
+                        sessions.reduce<Record<string, number>>((acc, s) => {
+                          const key = s.project_id || s.directory || "unknown";
+                          acc[key] = (acc[key] || 0) + 1;
+                          return acc;
+                        }, {}),
+                      )
+                        .sort((a, b) => b[1] - a[1])
+                        .slice(0, 5)
+                        .map(([project, count]) => (
+                          <div key={project} className="flex items-center justify-between">
+                            <span className="text-sm truncate max-w-[200px]" title={project}>
+                              {project.split("/").pop() || project}
+                            </span>
+                            <Badge variant="secondary">{count}</Badge>
+                          </div>
+                        ))}
+                      {sessions.length === 0 && (
+                        <p className="text-sm text-muted-foreground text-center py-2">No sessions yet</p>
+                      )}
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-base">Top Users</CardTitle>
+                      <CardDescription>{uniqueUsers} unique users</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      {Object.entries(
+                        sessions.reduce<Record<string, { count: number; name: string; email: string }>>((acc, s) => {
+                          if (!acc[s.user_id]) acc[s.user_id] = { count: 0, name: s.user_name, email: s.user_email };
+                          acc[s.user_id].count++;
+                          return acc;
+                        }, {}),
+                      )
+                        .sort((a, b) => b[1].count - a[1].count)
+                        .slice(0, 5)
+                        .map(([userId, { count, name, email }]) => (
+                          <div key={userId} className="flex items-center justify-between">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <Avatar className="h-6 w-6 shrink-0">
+                                <AvatarFallback className="text-[10px]">{name?.charAt(0)?.toUpperCase() || "?"}</AvatarFallback>
+                              </Avatar>
+                              <div className="min-w-0">
+                                <p className="text-sm font-medium truncate">{name || "Unknown"}</p>
+                                <p className="text-xs text-muted-foreground truncate">{email}</p>
+                              </div>
+                            </div>
+                            <Badge variant="secondary">{count}</Badge>
+                          </div>
+                        ))}
+                      {sessions.length === 0 && (
+                        <p className="text-sm text-muted-foreground text-center py-2">No sessions yet</p>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Session list */}
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle>All Sessions</CardTitle>
+                        <CardDescription>Sorted by most recent</CardDescription>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setSessionsLoading(true);
+                          fetch(`${API_BASE}/sessions/?limit=100`)
+                            .then((r) => r.json())
+                            .then((data) => { if (Array.isArray(data)) setSessions(data); })
+                            .catch((err) => console.error("[Stardrop] Failed to refresh sessions:", err))
+                            .finally(() => setSessionsLoading(false));
+                        }}
+                        disabled={sessionsLoading}
+                      >
+                        <RefreshCw className={`h-3.5 w-3.5 mr-1.5 ${sessionsLoading ? "animate-spin" : ""}`} />
+                        Refresh
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    {sessionsLoading && sessions.length === 0 && (
+                      <>
+                        {[1, 2, 3].map((i) => (
+                          <div key={i} className="flex gap-3 p-4">
+                            <Skeleton className="h-10 w-10 rounded-full shrink-0" />
+                            <div className="flex-1 space-y-2">
+                              <Skeleton className="h-4 w-48" />
+                              <Skeleton className="h-4 w-full" />
+                              <Skeleton className="h-3 w-32" />
+                            </div>
+                          </div>
+                        ))}
+                      </>
+                    )}
+                    {!sessionsLoading && sessions.length === 0 && (
+                      <div className="p-12 text-center">
+                        <Terminal className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+                        <p className="text-muted-foreground">No sessions logged yet</p>
+                        <p className="text-xs text-muted-foreground mt-1">Sessions will appear here when users run the coding agent</p>
+                      </div>
+                    )}
+                    {sessions.map((session, i) => {
+                      const isExpanded = expandedSessionId === session.session_id;
+                      const duration = sessionDuration(session);
+                      return (
+                        <div key={session.session_id}>
+                          {i > 0 && <Separator />}
+                          <div
+                            className={`p-4 hover:bg-muted/50 transition-colors cursor-pointer ${isExpanded ? "bg-muted/30" : ""}`}
+                            onClick={() => setExpandedSessionId(isExpanded ? null : session.session_id)}
+                          >
+                            <div className="flex gap-3">
+                              <Avatar className="h-10 w-10 shrink-0">
+                                <AvatarFallback className="text-xs">{session.user_name?.charAt(0)?.toUpperCase() || "?"}</AvatarFallback>
+                              </Avatar>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className="font-semibold text-sm">{session.user_name || "Unknown"}</span>
+                                  <span className="text-muted-foreground text-xs">{session.user_email}</span>
+                                  <span className="text-muted-foreground text-xs">· {formatDate(session.created_at)}</span>
+                                </div>
+                                <p className="text-sm mt-0.5 font-medium">{session.title || "Untitled session"}</p>
+                                <div className="flex items-center gap-3 mt-1.5 flex-wrap">
+                                  <div className="flex items-center gap-1">
+                                    {statusIcon(session.status)}
+                                    <span className="text-xs capitalize">{session.status}</span>
+                                  </div>
+                                  {session.project_id && (
+                                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                      <FolderGit2 className="h-3 w-3" />
+                                      <span className="truncate max-w-[150px]">{session.project_id}</span>
+                                    </div>
+                                  )}
+                                  {duration && (
+                                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                      <Clock className="h-3 w-3" />
+                                      <span>{duration}</span>
+                                    </div>
+                                  )}
+                                  {session.version && (
+                                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4">
+                                      v{session.version}
+                                    </Badge>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="flex items-start">
+                                <div className={`h-2.5 w-2.5 rounded-full mt-1 ${statusColor(session.status)}`} />
+                              </div>
+                            </div>
+                            {isExpanded && (
+                              <div className="mt-3 ml-[52px] space-y-3">
+                                <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
+                                  <div>
+                                    <span className="text-muted-foreground">Session ID</span>
+                                    <p className="font-mono text-xs mt-0.5 truncate">{session.session_id}</p>
+                                  </div>
+                                  <div>
+                                    <span className="text-muted-foreground">Directory</span>
+                                    <p className="font-mono text-xs mt-0.5 truncate">{session.directory || "N/A"}</p>
+                                  </div>
+                                  <div>
+                                    <span className="text-muted-foreground">Created</span>
+                                    <p className="text-xs mt-0.5">{new Date(session.created_at).toLocaleString()}</p>
+                                  </div>
+                                  <div>
+                                    <span className="text-muted-foreground">Last Updated</span>
+                                    <p className="text-xs mt-0.5">{new Date(session.updated_at).toLocaleString()}</p>
+                                  </div>
+                                  {session.completed_at && (
+                                    <div>
+                                      <span className="text-muted-foreground">Completed</span>
+                                      <p className="text-xs mt-0.5">{new Date(session.completed_at).toLocaleString()}</p>
+                                    </div>
+                                  )}
+                                </div>
+                                {session.summary && Object.keys(session.summary).length > 0 && (
+                                  <div>
+                                    <span className="text-sm text-muted-foreground">Summary</span>
+                                    <pre className="mt-1 p-3 bg-muted rounded-md text-xs overflow-auto max-h-48 whitespace-pre-wrap">
+                                      {JSON.stringify(session.summary, null, 2)}
+                                    </pre>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </CardContent>
+                </Card>
+              </div>
+            );
+          })()}
 
           {/* Projects view */}
           {activeView === "projects" && (
