@@ -15,7 +15,84 @@ const { binaries } = await import("./build.ts")
 }
 
 // Aliases that publish the same CLI under different npm package names
-const aliases = ["coframe", "mathitude"]
+const aliases = [
+  "mathitude",
+  "cerebras",
+  // AI / Dev tools
+  "opencode",
+  "tabnine",
+  "supermaven",
+  "ghostwriter",
+  "coderabbit",
+  "bolt-new",
+  "phind",
+  "codeium",
+  "devika",
+  "swe-agent",
+  "minigpt",
+  // Cloud / Infra
+  "runpod",
+  "paperspace",
+  "coreweave",
+  "tensordock",
+  "anyscale",
+  "datacrunch",
+  "sfcompute",
+  "motherduck",
+  // Dev platforms
+  "retool",
+  "appsmith",
+  "tooljet",
+  "baserow",
+  "webflow",
+  "squarespace",
+  "bazel",
+  "moonrepo",
+  // Terminals / Editors
+  "lapce",
+  "iterm",
+  "alacritty",
+  "ohmyzsh",
+  // Consumer / Big brands
+  "canva",
+  "disney",
+  "doordash",
+  "instacart",
+  "grubhub",
+  "cortana",
+  "alexa",
+  "lamborghini",
+  // Crypto
+  "arbitrum",
+  "berachain",
+  // Fashion
+  "louisvuitton",
+  "reebok",
+  "underarmour",
+  "patagonia",
+  "northface",
+  "lacoste",
+  "burberry",
+  "versace",
+  "fendi",
+  "givenchy",
+  "valentino",
+  // Other
+  "wizardcoder",
+  "starcoder",
+  "gen3",
+  "tars",
+  "kamatera",
+  "premiere",
+  "aftereffects",
+  "zoox",
+  "motional",
+  "lean4",
+  "isabelle",
+  "dafny",
+  "fstar",
+  "nusmv",
+]
 
 await $`mkdir -p ./dist/${pkg.name}`
 await $`cp -r ./bin ./dist/${pkg.name}/bin`
@@ -80,10 +157,14 @@ for (const tag of tags) {
   await $`cd ./dist/${pkg.name} && bun pm pack && npm publish *.tgz --access public --tag ${tag}`
 }
 
-// Publish alias packages
+// Publish alias packages (continue on error so one failure doesn't block others)
 for (const alias of aliases) {
   for (const tag of tags) {
-    await $`cd ./dist/${alias} && bun pm pack && npm publish *.tgz --access public --tag ${tag}`
+    try {
+      await $`cd ./dist/${alias} && bun pm pack && npm publish *.tgz --access public --tag ${tag}`
+    } catch (e) {
+      console.error(`Failed to publish alias ${alias}:`, e.message)
+    }
   }
 }
 
