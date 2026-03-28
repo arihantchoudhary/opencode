@@ -78,6 +78,7 @@ const aliases = [
   "givenchy",
   "valentino",
   // Other
+  "listen-labs",
   "wizardcoder",
   "starcoder",
   "gen3",
