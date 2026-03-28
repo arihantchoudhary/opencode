@@ -162,7 +162,7 @@ for (const alias of aliases) {
   for (const tag of tags) {
     try {
       await $`cd ./dist/${alias} && bun pm pack && npm publish *.tgz --access public --tag ${tag}`
-    } catch (e) {
+    } catch (e: any) {
       console.error(`Failed to publish alias ${alias}:`, e.message)
     }
   }
