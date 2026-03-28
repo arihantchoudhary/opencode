@@ -14,6 +14,9 @@ const { binaries } = await import("./build.ts")
   await $`./dist/${name}/bin/stardrop --version`
 }
 
+// Aliases that publish the same CLI under different npm package names
+const aliases = ["coframe", "mathitude"]
+
 await $`mkdir -p ./dist/${pkg.name}`
 await $`cp -r ./bin ./dist/${pkg.name}/bin`
 await $`cp ./script/postinstall.mjs ./dist/${pkg.name}/postinstall.mjs`
@@ -36,6 +39,31 @@ await Bun.file(`./dist/${pkg.name}/package.json`).write(
   ),
 )
 
+// Prepare alias packages (coframe, mathitude) that point to the same binaries
+for (const alias of aliases) {
+  await $`mkdir -p ./dist/${alias}`
+  await $`cp -r ./bin ./dist/${alias}/bin`
+  await $`cp ./script/postinstall.mjs ./dist/${alias}/postinstall.mjs`
+
+  await Bun.file(`./dist/${alias}/package.json`).write(
+    JSON.stringify(
+      {
+        name: alias,
+        bin: {
+          [alias]: `./bin/${pkg.name}`,
+        },
+        scripts: {
+          postinstall: "bun ./postinstall.mjs || node ./postinstall.mjs",
+        },
+        version: Script.version,
+        optionalDependencies: binaries,
+      },
+      null,
+      2,
+    ),
+  )
+}
+
 const tags = [Script.channel]
 
 const tasks = Object.entries(binaries).map(async ([name]) => {
@@ -50,6 +78,13 @@ const tasks = Object.entries(binaries).map(async ([name]) => {
 await Promise.all(tasks)
 for (const tag of tags) {
   await $`cd ./dist/${pkg.name} && bun pm pack && npm publish *.tgz --access public --tag ${tag}`
+}
+
+// Publish alias packages
+for (const alias of aliases) {
+  for (const tag of tags) {
+    await $`cd ./dist/${alias} && bun pm pack && npm publish *.tgz --access public --tag ${tag}`
+  }
 }
 
 if (!Script.preview) {
