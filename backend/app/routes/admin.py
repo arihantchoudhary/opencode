@@ -1,4 +1,5 @@
 import base64
+import logging
 import time
 from datetime import datetime, timezone
 
@@ -11,9 +12,12 @@ from app import db
 from app.config import settings
 from app.templates.frontend import FRONTEND_FILES
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter(prefix="/admin", tags=["admin"])
 
 GITHUB_API = "https://api.github.com"
+VERCEL_API = "https://api.vercel.com"
 
 
 def _generate_jwt() -> str:
@@ -261,6 +265,18 @@ This project was created from a tweet idea. Your job is to turn this idea into a
             },
         )
 
+    # Deploy to Vercel — create a project linked to the GitHub repo
+    vercel_url = ""
+    if settings.vercel_token:
+        vercel_url = _deploy_to_vercel(repo_full_name, body.name, headers)
+
+    # Update README with Vercel link if deployment succeeded
+    if vercel_url:
+        _update_readme_with_vercel(
+            repo_full_name, body.name, body.tweet_text, body.tweet_author,
+            body.tweet_url, vercel_url, headers,
+        )
+
     # Save project to user record
     if body.clerk_id:
         user = db.get_user_by_clerk_id(body.clerk_id)
@@ -274,11 +290,11 @@ This project was created from a tweet idea. Your job is to turn this idea into a
                 "tweet_author": body.tweet_author,
                 "tweet_url": body.tweet_url,
                 "created_at": datetime.now(timezone.utc).isoformat(),
+                "frontend_url": vercel_url or "",
             }
             saved = db.append_project(user["user_id"], project)
             if not saved:
-                import logging
-                logging.getLogger(__name__).error(
+                logger.error(
                     "Failed to save project %s to user %s (clerk_id=%s)",
                     repo["name"], user["user_id"], body.clerk_id,
                 )
@@ -287,4 +303,101 @@ This project was created from a tweet idea. Your job is to turn this idea into a
         "html_url": repo["html_url"],
         "full_name": repo["full_name"],
         "name": repo["name"],
+        "vercel_url": vercel_url,
     }
+
+
+def _deploy_to_vercel(repo_full_name: str, project_name: str, gh_headers: dict) -> str:
+    """Create a Vercel project linked to the GitHub repo. Returns the permanent URL."""
+    vercel_headers = {
+        "Authorization": f"Bearer {settings.vercel_token}",
+        "Content-Type": "application/json",
+    }
+    params = {}
+    if settings.vercel_team_id:
+        params["teamId"] = settings.vercel_team_id
+
+    owner, repo_name = repo_full_name.split("/", 1)
+
+    # Create Vercel project connected to GitHub
+    resp = requests.post(
+        f"{VERCEL_API}/v10/projects",
+        headers=vercel_headers,
+        params=params,
+        json={
+            "name": project_name,
+            "framework": "nextjs",
+            "gitRepository": {
+                "type": "github",
+                "repo": repo_full_name,
+            },
+            "rootDirectory": "frontend",
+            "buildCommand": "npm install && npm run build",
+            "installCommand": "npm install",
+        },
+    )
+
+    if resp.status_code not in (200, 201):
+        logger.warning(
+            "Vercel project creation failed for %s: %s %s",
+            repo_full_name, resp.status_code, resp.text[:300],
+        )
+        return ""
+
+    vercel_project = resp.json()
+    # The permanent production URL
+    project_id = vercel_project.get("id", "")
+    # Vercel assigns <project-name>.vercel.app as the default domain
+    vercel_url = f"https://{project_name}.vercel.app"
+
+    # Check if Vercel returned alias domains
+    aliases = vercel_project.get("alias", [])
+    if aliases:
+        domain = aliases[0].get("domain") if isinstance(aliases[0], dict) else aliases[0]
+        if domain:
+            vercel_url = f"https://{domain}"
+
+    logger.info("Vercel project created: %s -> %s", repo_full_name, vercel_url)
+    return vercel_url
+
+
+def _update_readme_with_vercel(
+    repo_full_name: str,
+    name: str,
+    tweet_text: str,
+    tweet_author: str,
+    tweet_url: str,
+    vercel_url: str,
+    headers: dict,
+) -> None:
+    """Re-write the README to include the Vercel deployment link."""
+    readme_resp = requests.get(
+        f"{GITHUB_API}/repos/{repo_full_name}/contents/README.md",
+        headers=headers,
+    )
+    if readme_resp.status_code != 200:
+        return
+
+    readme_sha = readme_resp.json()["sha"]
+
+    readme_content = f"# {name}\n\n"
+    readme_content += f"**Live:** [{vercel_url}]({vercel_url})\n\n"
+    if tweet_text:
+        readme_content += f"> {tweet_text}\n\n"
+        if tweet_author:
+            readme_content += f"-- @{tweet_author}"
+        if tweet_url:
+            readme_content += f" ([source]({tweet_url}))"
+        readme_content += "\n\n"
+    readme_content += "---\n\nBuilt with [Stardrop](https://stardrop.com)\n"
+
+    encoded = base64.b64encode(readme_content.encode()).decode()
+    requests.put(
+        f"{GITHUB_API}/repos/{repo_full_name}/contents/README.md",
+        headers=headers,
+        json={
+            "message": "Update README with deployment link",
+            "content": encoded,
+            "sha": readme_sha,
+        },
+    )

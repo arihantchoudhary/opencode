@@ -69,7 +69,7 @@ export async function createRepo(body: {
   tweet_author: string;
   tweet_url: string;
   clerk_id: string;
-}): Promise<{ html_url: string; full_name: string; name: string }> {
+}): Promise<{ html_url: string; full_name: string; name: string; vercel_url?: string }> {
   const res = await fetch(`${API_BASE}/admin/create-repo`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
