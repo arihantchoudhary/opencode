@@ -9,6 +9,7 @@ from pydantic import BaseModel
 
 from app import db
 from app.config import settings
+from app.templates.frontend import FRONTEND_FILES
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -207,6 +208,10 @@ def create_repo(body: CreateRepoRequest):
 {"— @" + body.tweet_author if body.tweet_author else ""}
 {("[Original tweet](" + body.tweet_url + ")") if body.tweet_url else ""}
 
+## Workflow
+- **Commit and push every prompt.** After completing work for each user message, stage the relevant changes, commit, and push to the current branch. Do not wait for the user to ask.
+- Co-author all commits with: `Co-Authored-By: Rosemary <rosemaryrunner@icloud.com>`
+
 ## Instructions
 This project was created from a tweet idea. Your job is to turn this idea into a working project.
 
@@ -232,8 +237,20 @@ This project was created from a tweet idea. Your job is to turn this idea into a
             },
         )
 
-    # Create standard directory structure (frontend, backend, infra, app)
-    for folder in ["frontend", "backend", "infra", "app"]:
+    # Scaffold frontend/ with a full Next.js + shadcn + Clerk project
+    for file_path, content in FRONTEND_FILES.items():
+        encoded = base64.b64encode(content.encode()).decode()
+        requests.put(
+            f"{GITHUB_API}/repos/{repo_full_name}/contents/{file_path}",
+            headers=headers,
+            json={
+                "message": f"Add {file_path}",
+                "content": encoded,
+            },
+        )
+
+    # Create remaining scaffold directories (backend, infra, app)
+    for folder in ["backend", "infra", "app"]:
         gitkeep_encoded = base64.b64encode(b"").decode()
         requests.put(
             f"{GITHUB_API}/repos/{repo_full_name}/contents/{folder}/.gitkeep",
@@ -258,7 +275,13 @@ This project was created from a tweet idea. Your job is to turn this idea into a
                 "tweet_url": body.tweet_url,
                 "created_at": datetime.now(timezone.utc).isoformat(),
             }
-            db.append_project(user["user_id"], project)
+            saved = db.append_project(user["user_id"], project)
+            if not saved:
+                import logging
+                logging.getLogger(__name__).error(
+                    "Failed to save project %s to user %s (clerk_id=%s)",
+                    repo["name"], user["user_id"], body.clerk_id,
+                )
 
     return {
         "html_url": repo["html_url"],

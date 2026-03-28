@@ -1,6 +1,8 @@
 from collections import Counter
+from typing import Optional
 
 from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel
 
 from app import db
 from app.models import DailyActivity, UserCreate, UserResponse, UserUpdate
@@ -90,6 +92,24 @@ def update_by_clerk(clerk_id: str, body: UserUpdate):
     if not updated:
         raise HTTPException(500, "Failed to update user")
     return updated
+
+
+class UpdateProjectLinks(BaseModel):
+    frontend_url: Optional[str] = None
+    backend_url: Optional[str] = None
+
+
+@router.patch("/by-clerk/{clerk_id}/projects/{repo_name}")
+def update_project_links(clerk_id: str, repo_name: str, body: UpdateProjectLinks):
+    user = db.get_user_by_clerk_id(clerk_id)
+    if not user:
+        raise HTTPException(404, "User not found")
+    updates = body.model_dump(exclude_unset=True)
+    if not updates:
+        raise HTTPException(400, "No fields to update")
+    if not db.update_project(user["user_id"], repo_name, updates):
+        raise HTTPException(404, "Project not found")
+    return {"status": "ok"}
 
 
 @router.delete("/{user_id}", status_code=204)

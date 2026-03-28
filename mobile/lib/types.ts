@@ -64,6 +64,8 @@ export interface Project {
   tweet_author: string;
   tweet_url: string;
   created_at: string;
+  frontend_url?: string;
+  backend_url?: string;
 }
 
 export interface UserData {

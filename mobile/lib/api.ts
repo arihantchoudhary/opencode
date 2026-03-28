@@ -82,6 +82,22 @@ export async function createRepo(body: {
   return res.json();
 }
 
+export async function updateProjectLinks(
+  clerkId: string,
+  repoName: string,
+  links: { frontend_url?: string; backend_url?: string },
+): Promise<void> {
+  const res = await fetch(
+    `${API_BASE}/api/users/by-clerk/${clerkId}/projects/${encodeURIComponent(repoName)}`,
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(links),
+    },
+  );
+  if (!res.ok) throw new Error("Failed to update project links");
+}
+
 export function formatDate(dateStr: string): string {
   const date = new Date(dateStr);
   const now = new Date();

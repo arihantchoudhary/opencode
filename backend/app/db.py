@@ -1,7 +1,10 @@
+import logging
 import uuid
 from datetime import datetime, timezone
 
 import boto3
+
+logger = logging.getLogger(__name__)
 
 from app.config import settings
 
@@ -96,7 +99,36 @@ def append_project(user_id: str, project: dict) -> bool:
             },
         )
         return True
-    except Exception:
+    except Exception as e:
+        logger.exception("Failed to append project for user %s: %s", user_id, e)
+        return False
+
+
+def update_project(user_id: str, repo_name: str, updates: dict) -> bool:
+    """Update fields on a specific project by repo_name."""
+    user = get_user(user_id)
+    if not user:
+        return False
+    projects = user.get("projects") or []
+    found = False
+    for proj in projects:
+        if proj.get("repo_name") == repo_name:
+            proj.update(updates)
+            found = True
+            break
+    if not found:
+        return False
+    table = _get_table()
+    now = datetime.now(timezone.utc).isoformat()
+    try:
+        table.update_item(
+            Key={"user_id": user_id},
+            UpdateExpression="SET projects = :proj, updated_at = :now",
+            ExpressionAttributeValues={":proj": projects, ":now": now},
+        )
+        return True
+    except Exception as e:
+        logger.exception("Failed to update project %s for user %s: %s", repo_name, user_id, e)
         return False
 
 
