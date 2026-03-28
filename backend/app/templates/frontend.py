@@ -218,9 +218,10 @@ export const config = {
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
-  --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
+  --font-sans: var(--font-sans), "Inter", -apple-system, system-ui, sans-serif;
+  --font-serif: var(--font-serif), "Newsreader", "Georgia", serif;
+  --font-mono: var(--font-mono), ui-monospace, monospace;
+  --font-heading: var(--font-serif);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -257,6 +258,51 @@ export const config = {
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+/* Typography — Inter body, Newsreader headings */
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  letter-spacing: -0.005em;
+}
+
+h1 {
+  letter-spacing: -0.03em;
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-weight: 400;
+  text-wrap: balance;
+}
+h2 {
+  letter-spacing: -0.02em;
+  font-family: var(--font-serif);
+  text-wrap: balance;
+}
+h3 {
+  letter-spacing: -0.01em;
+}
+
+/* Focus-visible */
+a:focus-visible, button:focus-visible {
+  outline: 2px solid #171717;
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* Hide Clerk branding */
+.cl-footer { display: none !important; }
+.cl-card { box-shadow: none !important; border: none !important; background: transparent !important; }
+.cl-cardBox { box-shadow: none !important; border: none !important; }
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 :root {
@@ -332,29 +378,20 @@ export const config = {
   * {
     @apply border-border outline-ring/50;
   }
-  body {
-    @apply bg-background text-foreground;
-  }
-  html {
-    @apply font-sans;
-  }
 }
 """,
     # ── Root layout with Clerk ────────────────────────────────────
     "frontend/src/app/layout.tsx": """\
 import type { Metadata } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter, Newsreader } from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
+const newsreader = Newsreader({
   subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+  variable: "--font-serif",
+  style: ["normal", "italic"],
 });
 
 export const metadata: Metadata = {
@@ -369,11 +406,10 @@ export default function RootLayout({
 }>) {
   return (
     <ClerkProvider>
-      <html
-        lang="en"
-        className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-      >
-        <body className="min-h-full flex flex-col">{children}</body>
+      <html lang="en" className={`${inter.variable} ${newsreader.variable}`}>
+        <body className="min-h-screen antialiased bg-white text-neutral-900 font-sans">
+          {children}
+        </body>
       </html>
     </ClerkProvider>
   );
@@ -409,7 +445,7 @@ export default function Home() {
           <Zap className="size-3" />
           Built with Stardrop
         </div>
-        <h1 className="max-w-2xl text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
+        <h1 className="max-w-2xl text-4xl sm:text-5xl lg:text-6xl">
           Ship faster with a head start
         </h1>
         <p className="mt-4 max-w-lg text-lg text-muted-foreground">
@@ -547,7 +583,7 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
+        <h1 className="text-2xl">Dashboard</h1>
         <p className="text-sm text-muted-foreground">Welcome back. Here&apos;s an overview.</p>
       </div>
 
@@ -603,7 +639,7 @@ export default function AnalyticsPage() {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Analytics</h1>
+        <h1 className="text-2xl">Analytics</h1>
         <p className="text-sm text-muted-foreground">Track performance metrics.</p>
       </div>
       <div className="flex h-96 items-center justify-center rounded-xl border border-dashed">
@@ -618,7 +654,7 @@ export default function CustomersPage() {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Customers</h1>
+        <h1 className="text-2xl">Customers</h1>
         <p className="text-sm text-muted-foreground">Manage your customers.</p>
       </div>
       <div className="flex h-96 items-center justify-center rounded-xl border border-dashed">
@@ -633,7 +669,7 @@ export default function ContentPage() {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Content</h1>
+        <h1 className="text-2xl">Content</h1>
         <p className="text-sm text-muted-foreground">Manage your content.</p>
       </div>
       <div className="flex h-96 items-center justify-center rounded-xl border border-dashed">
@@ -648,7 +684,7 @@ export default function SettingsPage() {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
+        <h1 className="text-2xl">Settings</h1>
         <p className="text-sm text-muted-foreground">Configure your application.</p>
       </div>
       <div className="flex h-96 items-center justify-center rounded-xl border border-dashed">
