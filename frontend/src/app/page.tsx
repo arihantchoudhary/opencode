@@ -17,6 +17,10 @@ import {
   ExternalLink,
   Check,
   XCircle,
+  Package,
+  BarChart3,
+  Target,
+  ChevronDown,
 } from "lucide-react";
 
 const PRODUCTS = [
@@ -161,6 +165,7 @@ export default function LandingPage() {
             <a href="#products" className="hover:text-foreground transition-colors">Products</a>
             <a href="#comparison" className="hover:text-foreground transition-colors">vs. Competitors</a>
             <a href="#pricing" className="hover:text-foreground transition-colors">Pricing</a>
+            <a href="#planning-pyramid" className="hover:text-foreground transition-colors">Pyramid</a>
           </nav>
           <div className="flex items-center gap-3">
                                           <Button variant="ghost" size="sm">Sign in</Button>
@@ -551,6 +556,99 @@ export default function LandingPage() {
           <p className="text-xs text-muted-foreground text-center mt-4">
             Sources: Congruence Market Insights, Mordor Intelligence
           </p>
+        </div>
+      </section>
+
+      {/* Planning Pyramid */}
+      <section id="planning-pyramid" className="border-t bg-muted/30">
+        <div className="max-w-6xl mx-auto px-6 py-20">
+          <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-2">Planning pyramid</h2>
+          <p className="text-2xl font-bold mb-3">From npm install to conversion</p>
+          <p className="text-muted-foreground max-w-lg mb-12">
+            350+ npm packages funnel developers into the Stardrop ecosystem. Each layer amplifies the next.
+          </p>
+
+          {/* Pyramid */}
+          <div className="max-w-3xl mx-auto flex flex-col items-center gap-0">
+            {/* Layer 4 — Conversion (top, narrowest) */}
+            <div className="w-[40%] relative">
+              <div className="rounded-t-xl border-2 border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30 p-5 text-center">
+                <div className="flex items-center justify-center gap-2 mb-1">
+                  <Target className="h-4 w-4 text-emerald-600" />
+                  <span className="text-xs font-semibold uppercase tracking-wider text-emerald-600">Conversion</span>
+                </div>
+                <p className="text-lg font-bold">Coframe</p>
+                <p className="text-xs text-muted-foreground mt-1">Engagement, retention, monetization</p>
+              </div>
+            </div>
+            <ChevronDown className="h-4 w-4 text-muted-foreground/50 -my-1 rotate-180" />
+
+            {/* Layer 3 — Signals */}
+            <div className="w-[58%] relative">
+              <div className="border-x-2 border-amber-500 bg-amber-50 dark:bg-amber-950/30 p-5 text-center">
+                <div className="flex items-center justify-center gap-2 mb-1">
+                  <BarChart3 className="h-4 w-4 text-amber-600" />
+                  <span className="text-xs font-semibold uppercase tracking-wider text-amber-600">Signals</span>
+                </div>
+                <p className="text-lg font-bold">HaystacksAI</p>
+                <p className="text-xs text-muted-foreground mt-1">Usage intelligence, behavior analytics, intent data</p>
+              </div>
+            </div>
+            <ChevronDown className="h-4 w-4 text-muted-foreground/50 -my-1 rotate-180" />
+
+            {/* Layer 2 — Intelligence */}
+            <div className="w-[76%] relative">
+              <div className="border-x-2 border-blue-500 bg-blue-50 dark:bg-blue-950/30 p-5 text-center">
+                <div className="flex items-center justify-center gap-2 mb-1">
+                  <Terminal className="h-4 w-4 text-blue-600" />
+                  <span className="text-xs font-semibold uppercase tracking-wider text-blue-600">Intelligence</span>
+                </div>
+                <p className="text-lg font-bold">Stardrop CLI</p>
+                <p className="text-xs text-muted-foreground mt-1">Multi-agent AI coding in your terminal &mdash; every session generates signal</p>
+              </div>
+            </div>
+            <ChevronDown className="h-4 w-4 text-muted-foreground/50 -my-1 rotate-180" />
+
+            {/* Layer 1 — Distribution (base, widest) */}
+            <div className="w-full relative">
+              <div className="rounded-b-xl border-2 border-violet-500 bg-violet-50 dark:bg-violet-950/30 p-6 text-center">
+                <div className="flex items-center justify-center gap-2 mb-1">
+                  <Package className="h-4 w-4 text-violet-600" />
+                  <span className="text-xs font-semibold uppercase tracking-wider text-violet-600">Distribution</span>
+                </div>
+                <p className="text-lg font-bold">npm Land Grab</p>
+                <p className="text-xs text-muted-foreground mt-1 mb-4">350+ packages claimed &mdash; competitors, cities, brands all install Stardrop</p>
+                <div className="flex flex-wrap justify-center gap-2 text-[10px]">
+                  {["tabnine", "cursor-ai", "coderabbit", "supermaven", "bolt-new", "windsurf-ai", "lamborghini", "versace", "hyderabad", "philadelphia", "munich", "saopaulo"].map((name) => (
+                    <span
+                      key={name}
+                      className="inline-flex items-center rounded-full border border-violet-300 dark:border-violet-700 bg-violet-100 dark:bg-violet-900/50 px-2 py-0.5 font-mono text-violet-700 dark:text-violet-300"
+                    >
+                      npm i -g {name}
+                    </span>
+                  ))}
+                  <span className="inline-flex items-center rounded-full border border-dashed border-violet-300 dark:border-violet-700 px-2 py-0.5 text-violet-500">
+                    +338 more
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Stats row */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-12 max-w-3xl mx-auto">
+            {[
+              { value: "350+", label: "npm packages", color: "text-violet-600" },
+              { value: "163", label: "cities worldwide", color: "text-blue-600" },
+              { value: "100+", label: "competitors shadowed", color: "text-amber-600" },
+              { value: "46", label: "Indian cities", color: "text-emerald-600" },
+            ].map((stat) => (
+              <div key={stat.label} className="text-center p-4 rounded-lg border bg-background">
+                <p className={`text-2xl font-bold ${stat.color}`}>{stat.value}</p>
+                <p className="text-xs text-muted-foreground mt-1">{stat.label}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
