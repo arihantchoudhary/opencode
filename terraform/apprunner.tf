@@ -32,6 +32,10 @@ resource "aws_apprunner_service" "backend" {
             GITHUB_APP_ID                = var.github_app_id
             GITHUB_APP_PRIVATE_KEY       = var.github_app_private_key
             TWITTER_BEARER_TOKEN         = var.twitter_bearer_token
+            TWITTER_ACCESS_TOKEN         = var.twitter_access_token
+            TWITTER_ACCESS_TOKEN_SECRET  = var.twitter_access_token_secret
+            TWITTER_API_KEY              = var.twitter_api_key
+            TWITTER_API_KEY_SECRET       = var.twitter_api_key_secret
             DYNAMODB_TWEETS_TABLE_NAME   = aws_dynamodb_table.tweets.name
           }
         }

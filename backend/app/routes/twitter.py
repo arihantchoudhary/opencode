@@ -4,6 +4,7 @@ from decimal import Decimal
 import boto3
 import requests
 from fastapi import APIRouter, HTTPException, Query
+from requests_oauthlib import OAuth1
 
 from app.config import settings
 
@@ -15,8 +16,28 @@ router = APIRouter(prefix="/api/twitter", tags=["twitter"])
 TWITTER_API_BASE = "https://api.twitter.com/2"
 
 
+def _oauth1():
+    """Return OAuth1 auth object if user-context credentials are configured."""
+    if settings.twitter_access_token and settings.twitter_access_token_secret:
+        return OAuth1(
+            settings.twitter_api_key,
+            settings.twitter_api_key_secret,
+            settings.twitter_access_token,
+            settings.twitter_access_token_secret,
+        )
+    return None
+
+
 def _headers():
     return {"Authorization": f"Bearer {settings.twitter_bearer_token}"}
+
+
+def _authed_get(url: str, **kwargs):
+    """Make a GET request using OAuth 1.0a if available, otherwise Bearer Token."""
+    auth = _oauth1()
+    if auth:
+        return requests.get(url, auth=auth, **kwargs)
+    return requests.get(url, headers=_headers(), **kwargs)
 
 
 def _get_tweets_table():
@@ -96,9 +117,8 @@ def _resolve_user_id(username: str) -> str:
     except Exception:
         pass
 
-    resp = requests.get(
+    resp = _authed_get(
         f"{TWITTER_API_BASE}/users/by/username/{username}",
-        headers=_headers(),
         params={"user.fields": "id,name,username,profile_image_url,public_metrics,description"},
         timeout=10,
     )
@@ -135,7 +155,7 @@ def _get_cached_profile(username: str) -> dict | None:
 
 
 def _fetch_from_twitter(username: str) -> dict:
-    if not settings.twitter_bearer_token:
+    if not settings.twitter_bearer_token and not settings.twitter_access_token:
         raise HTTPException(status_code=503, detail="Twitter API not configured")
 
     user_id = _resolve_user_id(username)
@@ -148,9 +168,8 @@ def _fetch_from_twitter(username: str) -> dict:
         "media.fields": "preview_image_url,type,url,width,height",
     }
 
-    resp = requests.get(
+    resp = _authed_get(
         f"{TWITTER_API_BASE}/users/{user_id}/mentions",
-        headers=_headers(),
         params=params,
         timeout=10,
     )
@@ -192,7 +211,7 @@ def get_profile(username: str):
         return profile
 
     # Force a resolve to populate the cache
-    if not settings.twitter_bearer_token:
+    if not settings.twitter_bearer_token and not settings.twitter_access_token:
         raise HTTPException(status_code=503, detail="Twitter API not configured")
     _resolve_user_id(username)
     profile = _get_cached_profile(username)
@@ -294,7 +313,7 @@ def get_dashboard(username: str):
 @router.get("/thread/{conversation_id}")
 def get_thread(conversation_id: str):
     """Fetch all tweets in a conversation thread. Cached with same TTL as mentions."""
-    if not settings.twitter_bearer_token:
+    if not settings.twitter_bearer_token and not settings.twitter_access_token:
         raise HTTPException(status_code=503, detail="Twitter API not configured")
 
     cache_key = f"thread_{conversation_id}"
@@ -316,9 +335,8 @@ def get_thread(conversation_id: str):
     tweet_fields = "author_id,conversation_id,created_at,public_metrics,referenced_tweets,text"
     user_fields = "name,username,profile_image_url,verified"
 
-    search_resp = requests.get(
+    search_resp = _authed_get(
         f"{TWITTER_API_BASE}/tweets/search/recent",
-        headers=_headers(),
         params={
             "query": f"conversation_id:{conversation_id}",
             "max_results": 100,
@@ -339,9 +357,8 @@ def get_thread(conversation_id: str):
     thread_users = search_data.get("includes", {}).get("users") or []
 
     # Fetch root tweet (search may not include it)
-    root_resp = requests.get(
+    root_resp = _authed_get(
         f"{TWITTER_API_BASE}/tweets/{conversation_id}",
-        headers=_headers(),
         params={
             "tweet.fields": tweet_fields,
             "expansions": "author_id",

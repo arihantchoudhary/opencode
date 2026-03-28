@@ -10,6 +10,10 @@ class Settings(BaseSettings):
     github_app_id: str = ""
     github_app_private_key: str = ""
     twitter_bearer_token: str = ""
+    twitter_access_token: str = ""
+    twitter_access_token_secret: str = ""
+    twitter_api_key: str = ""
+    twitter_api_key_secret: str = ""
     dynamodb_tweets_table_name: str = "stardrop-tweets-dev"
     twitter_cache_ttl_minutes: int = 15
 

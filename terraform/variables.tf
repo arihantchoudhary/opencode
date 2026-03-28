@@ -49,5 +49,32 @@ variable "github_app_private_key" {
 variable "twitter_bearer_token" {
   type        = string
   sensitive   = true
+  default     = ""
   description = "Twitter API v2 Bearer Token for @Stardropper mentions"
+}
+
+variable "twitter_access_token" {
+  type        = string
+  sensitive   = true
+  description = "Twitter OAuth 1.0a Access Token"
+}
+
+variable "twitter_access_token_secret" {
+  type        = string
+  sensitive   = true
+  description = "Twitter OAuth 1.0a Access Token Secret"
+}
+
+variable "twitter_api_key" {
+  type        = string
+  sensitive   = true
+  default     = ""
+  description = "Twitter API Key (Consumer Key)"
+}
+
+variable "twitter_api_key_secret" {
+  type        = string
+  sensitive   = true
+  default     = ""
+  description = "Twitter API Key Secret (Consumer Secret)"
 }

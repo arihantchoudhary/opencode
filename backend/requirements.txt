@@ -4,4 +4,5 @@ boto3==1.35.0
 pydantic==2.9.0
 pydantic-settings==2.5.0
 requests==2.32.0
+requests-oauthlib==2.0.0
 PyJWT[crypto]==2.9.0
