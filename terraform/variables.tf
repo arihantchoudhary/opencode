@@ -78,3 +78,17 @@ variable "twitter_api_key_secret" {
   default     = ""
   description = "Twitter API Key Secret (Consumer Secret)"
 }
+
+variable "twitter_oauth2_client_id" {
+  type        = string
+  sensitive   = true
+  default     = ""
+  description = "Twitter OAuth 2.0 Client ID"
+}
+
+variable "twitter_oauth2_client_secret" {
+  type        = string
+  sensitive   = true
+  default     = ""
+  description = "Twitter OAuth 2.0 Client Secret"
+}

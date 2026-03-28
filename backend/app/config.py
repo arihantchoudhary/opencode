@@ -14,6 +14,8 @@ class Settings(BaseSettings):
     twitter_access_token_secret: str = ""
     twitter_api_key: str = ""
     twitter_api_key_secret: str = ""
+    twitter_oauth2_client_id: str = ""
+    twitter_oauth2_client_secret: str = ""
     dynamodb_tweets_table_name: str = "stardrop-tweets-dev"
     twitter_cache_ttl_minutes: int = 15
 

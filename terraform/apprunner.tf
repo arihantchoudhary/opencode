@@ -36,6 +36,8 @@ resource "aws_apprunner_service" "backend" {
             TWITTER_ACCESS_TOKEN_SECRET  = var.twitter_access_token_secret
             TWITTER_API_KEY              = var.twitter_api_key
             TWITTER_API_KEY_SECRET       = var.twitter_api_key_secret
+            TWITTER_OAUTH2_CLIENT_ID     = var.twitter_oauth2_client_id
+            TWITTER_OAUTH2_CLIENT_SECRET = var.twitter_oauth2_client_secret
             DYNAMODB_TWEETS_TABLE_NAME   = aws_dynamodb_table.tweets.name
           }
         }
