@@ -9,12 +9,14 @@
 
 Every new repo created from the Stardrop dashboard gets:
 - `frontend/` — full Next.js + shadcn + Clerk project with landing page and dashboard
-- Auto-deployed to Vercel (linked to the GitHub repo, builds from `frontend/`)
-- README updated with the permanent Vercel URL
-- `CLAUDE.md` with commit-every-prompt workflow
+- `CLAUDE.md` with instructions to deploy via `npx vercel --prod --yes` and update README with the live URL
+- Commit-every-prompt workflow and Rosemary co-author baked in
 
-## Vercel
+## Vercel Deployment
 
-Requires `VERCEL_TOKEN` and optionally `VERCEL_TEAM_ID` env vars on the backend.
-Projects are created via the Vercel API with `rootDirectory: "frontend"` and auto-deploy on push.
-The permanent URL is `https://<project-name>.vercel.app`.
+Scaffolded repos instruct Stardrop/Claude Code to deploy using the Vercel CLI:
+```
+cd frontend && npx vercel --prod --yes
+```
+After deploy, the permanent URL (`https://<project>.vercel.app`) goes in the README.
+Subsequent pushes auto-deploy via Vercel's GitHub integration.

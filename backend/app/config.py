@@ -12,8 +12,6 @@ class Settings(BaseSettings):
     twitter_bearer_token: str = ""
     dynamodb_tweets_table_name: str = "stardrop-tweets-dev"
     twitter_cache_ttl_minutes: int = 15
-    vercel_token: str = ""
-    vercel_team_id: str = ""
 
     class Config:
         env_file = ".env"
